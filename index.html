@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Tracy Signature – Le jeu</title>
+  <meta name="description" content="Le jeu du salon Signature Cut by Tracy à Pau : coupez, encaissez, débloquez toutes les prestations.">
+  <meta name="theme-color" content="#2b1d24">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="brand">
+        <h1>TRACY SIGNATURE</h1>
+        <p>Barbière à Pau</p>
+      </div>
+      <div class="stats">
+        <div><b id="money">0 €</b><small>caisse</small></div>
+        <div><b id="points">0</b><small>points</small></div>
+      </div>
+    </header>
+
+    <section id="order">
+      <div class="order-line"><span id="order-svc"></span><b id="order-price"></b></div>
+      <div class="order-sub" id="order-cut"></div>
+      <div class="bar"><i id="bar"></i></div>
+    </section>
+
+    <section id="scene">
+      <canvas id="cv" width="96" height="104" aria-label="Le client dans le fauteuil : touchez pour couper"></canvas>
+      <div id="floats"></div>
+      <div id="combo"></div>
+      <div id="hint">Touchez pour couper !</div>
+      <div id="toast" role="status"></div>
+    </section>
+
+    <nav id="tabs">
+      <button data-tab="tools" class="on">Outils</button>
+      <button data-tab="menu">Carte</button>
+      <button data-tab="cuts">Coupes</button>
+      <button data-tab="salon">Salon</button>
+    </nav>
+
+    <section id="panel"></section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

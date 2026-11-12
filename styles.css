@@ -71,7 +71,6 @@ html, body {
   background: rgba(0,0,0,.32); border: 1px solid rgba(217,184,95,.35); color: var(--gold2);
   font: inherit; font-size: 15px; cursor: pointer;
 }
-#snd::before { content: "♪"; }
 #snd.off { color: #7d7466; text-decoration: line-through; }
 
 /* ---------- Zone de jeu ---------- */
@@ -82,7 +81,10 @@ html, body {
 #order-svc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #order-price { color: var(--gold2); white-space: nowrap; font-weight: 600; }
 .order-sub { font-size: 13px; color: var(--muted); min-height: 18px; }
-.bar { height: 8px; margin-top: 5px; background: #121110; border-radius: 4px; overflow: hidden; }
+.bar { position: relative; height: 8px; margin-top: 5px; background: #121110; border-radius: 4px; overflow: hidden; }
+#ticks span { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: rgba(255,255,255,.55); }
+.bar.big { height: 10px; margin: 0 0 10px; }
+.bar.big i { transition: width .3s; }
 .bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: linear-gradient(90deg, var(--gold-d), var(--gold2)); }
 
 #stage {
@@ -104,6 +106,40 @@ html, body {
 .float.crit { font-size: 24px; color: #ffd36b; }
 .float.pay { font-size: 30px; color: var(--gold2); animation-duration: 1.2s; }
 .float.vip { color: var(--pink); }
+.float.step { font-size: 26px; color: var(--gold2); animation-duration: 1.3s; letter-spacing: .02em; }
+
+/* Fauteuils de l'équipe */
+#seats { position: absolute; left: 8px; right: 8px; bottom: 6px; display: flex; gap: 6px; justify-content: center; pointer-events: none; }
+.seat {
+  position: relative; flex: 0 1 84px; min-width: 0; padding: 4px 7px 5px;
+  background: rgba(18,17,16,.74); border: 1px solid rgba(217,184,95,.4); border-radius: 10px;
+  font-size: 10.5px; font-weight: 600; color: var(--gold2); white-space: nowrap;
+}
+.seat span { display: block; overflow: hidden; text-overflow: ellipsis; }
+.seat i { display: block; height: 4px; margin-top: 3px; background: rgba(255,255,255,.14); border-radius: 2px; overflow: hidden; }
+.seat b { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-d), var(--gold2)); }
+.seat em { position: absolute; left: 50%; bottom: 100%; font-style: normal; font-size: 13px; color: var(--gold2); text-shadow: 0 2px 6px rgba(0,0,0,.8); opacity: 0; transform: translateX(-50%); }
+.seat em.on { animation: seatpop 1s ease-out; }
+@keyframes seatpop { 0% { opacity: 0; transform: translate(-50%, 6px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -22px); } }
+
+/* Bulle de vente d'un produit */
+#offer {
+  position: absolute; z-index: 1; min-width: 150px; padding: 8px 12px 9px; text-align: left; cursor: pointer;
+  background: linear-gradient(160deg, #fff8e2, var(--gold2) 60%, var(--gold)); color: #2a2109;
+  border: 0; border-radius: 16px; font: inherit; box-shadow: 0 10px 26px rgba(0,0,0,.5), 0 0 0 3px rgba(255,255,255,.25);
+  animation: offer 4.5s linear forwards;
+}
+#offer[hidden] { display: none; }
+#offer small { display: block; font-size: 11px; opacity: .75; }
+#offer b { display: block; font-size: 15px; font-weight: 700; }
+#offer span { display: block; font-size: 13px; font-weight: 600; }
+@keyframes offer { 0% { transform: scale(.5); opacity: 0; } 5% { transform: scale(1.08); opacity: 1; } 9% { transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+
+.tiers { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 4px 0 6px; }
+.tiers span { padding: 6px 2px; text-align: center; font-size: 10.5px; font-weight: 600; line-height: 1.2; color: #6b6357; background: #25221e; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; text-overflow: ellipsis; }
+.tiers span.on { color: #2a2109; background: var(--gold); border-color: var(--gold); }
+.tiers small { display: block; font-weight: 500; opacity: .8; }
+td .who { display: block; font-size: 12px; color: var(--muted); }
 @keyframes rise {
   0% { transform: translate(-50%, -50%) scale(.6); opacity: 0; }
   15% { transform: translate(-50%, -80%) scale(1.15); opacity: 1; }
@@ -147,10 +183,10 @@ html, body {
 
 /* ---------- Onglets et panneau ---------- */
 #side { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
-#tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px 10px 0; background: var(--bg); }
+#tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 8px 8px 0; background: var(--bg); }
 #tabs button {
-  height: 38px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2);
-  color: var(--muted); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  height: 38px; padding: 0 2px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2);
+  color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap;
 }
 #tabs button.on { background: var(--gold); border-color: var(--gold); color: #2a2109; font-weight: 600; }
 

@@ -1,5 +1,7 @@
-/* Signature Cut by Tracy – le jeu (clicker) · V2
+/* Signature Cut by Tracy – le jeu (clicker) · V3
    Rendu vectoriel lisse sur canvas, net sur tous les écrans. Tout est local (localStorage).
+   V3 : univers de clientèle, activités (shampoing, massage, soin, lotion), décor animé, musique,
+   vente de produits avec historique, fauteuils d'équipe.
    Données du salon : fiche Planity « Signature cut by Tracy », consultée le 12/11/2026. */
 'use strict';
 
@@ -25,7 +27,7 @@ const SALON = {
 // Récompense : code de réduction. À VALIDER avec Tracy (montant, conditions).
 // Il faut atteindre le niveau ET avoir joué activement au moins minMinutes.
 const REWARD = { level: 12, minMinutes: 15, label: '-10 %', terms: 'Valable une fois, sur présentation au salon.' };
-const XP0 = 75; // vitesse des niveaux (voir xpNeed) : réglé pour ~15 min au niveau 12 en jouant vite
+const XP0 = 65; // vitesse des niveaux (voir xpNeed) : niveau 12 vers 10-12 min en jouant vite, le plancher de 15 min fait le reste
 
 // La vraie carte du salon : prix et durées Planity. "cost" = prix de déblocage dans le jeu.
 const SERVICES = [
@@ -38,9 +40,9 @@ const SERVICES = [
   { id: 'barbe', n: 'Taille de barbe', price: 20, min: 20, cost: 500, cut: false, beard: 2 },
   { id: 'pere', n: 'Pack Père & Fils', price: 30, min: 60, cost: 900, cut: true, note: "jusqu'à 30 €" },
   { id: 'massage', n: 'Coupe + massage crânien', price: 35, min: 30, cost: 1500, cut: true, massage: true },
-  { id: 'visage', n: 'Coupe + soin visage', price: 35, min: 30, cost: 2500, cut: true },
+  { id: 'visage', n: 'Coupe + soin visage', price: 35, min: 30, cost: 2500, cut: true, soin: true },
   { id: 'coupebarbe', n: 'Coupe + barbe', price: 45, min: 50, cost: 4000, cut: true, beard: 2 },
-  { id: 'complete', n: 'Coupe + massage crânien + barbe + soin visage', price: 65, min: 60, cost: 8000, cut: true, beard: 2, massage: true },
+  { id: 'complete', n: 'Coupe + massage crânien + barbe + soin visage', price: 65, min: 60, cost: 8000, cut: true, beard: 2, massage: true, soin: true },
 ];
 
 const TOOLS = [
@@ -49,7 +51,30 @@ const TOOLS = [
   { id: 'lotion', n: 'Lotion & soin', d: '+10 % sur chaque prestation', base: 150, g: 1.6 },
   { id: 'tondeuse', n: 'Tondeuse pro', d: '+4 de puissance par clic', base: 220, g: 1.5 },
   { id: 'bouche', n: 'Bouche-à-oreille', d: '+5 % de clients généreux (x3)', base: 400, g: 1.7, max: 10 },
+  { id: 'presentoir', n: 'Présentoir produits', d: '+1,5 % de chances de vendre un produit', base: 250, g: 1.6, max: 8 },
+  { id: 'formation', n: "Formation de l'équipe", d: 'Les autres fauteuils vont 10 % plus vite', base: 600, g: 1.7, max: 10 },
 ];
+
+/* Univers : la clientèle monte en gamme avec les gains cumulés (at). m = multiplicateur de tarifs, propre au jeu.
+   wall = couleurs du mur. Les tenues et bijoux sont génériques : aucune marque réelle n'est reproduite. */
+const TIERS = [
+  { n: 'Quartier', at: 0, m: 1, d: 'Les habitués du quartier : t-shirts et petits budgets.', wall: ['#4a4640', '#3d3934', '#2a2723'] },
+  { n: 'Centre-ville', at: 500, m: 2.5, d: 'Le bouche-à-oreille gagne le centre de Pau : chemises et rendez-vous réguliers.', wall: ['#3f4a4c', '#33403f', '#222b2b'] },
+  { n: 'Affaires', at: 5000, m: 6, d: 'Costume, cravate et agenda chargé : ils veulent du net, vite.', wall: ['#3a3f52', '#2c3044', '#1c1f2e'] },
+  { n: 'Créateurs', at: 40000, m: 14, d: 'T-shirts noirs de créateur et chaînes en or.', wall: ['#4a3550', '#382640', '#221628'] },
+  { n: 'Stars', at: 300000, m: 30, d: 'Colliers et boucles d\'oreilles en diamant : le salon devient une adresse.', wall: ['#2c2c33', '#1e1e25', '#111116'] },
+  { n: 'Légendes', at: 2000000, m: 65, d: 'Diamants partout, jusque dans le sourire.', wall: ['#3d2f12', '#261c0a', '#120c03'] },
+];
+// Un client plus riche est plus exigeant : plus de travail (et autant d'expérience en plus).
+// Sans cela, en fin de partie, chaque client partirait en un clic.
+const TIER_WORK = [1, 3, 8, 20, 45, 100];
+const TIER_XP = [1, 1.7, 2.8, 4.5, 6.7, 10]; // l'expérience monte moins vite que le travail : joueurs rapides et lents restent proches
+const SEATS = [600, 3500, 15000, 60000]; // prix des fauteuils 2 à 5
+const SEAT_TIME = 12;                    // secondes par client sur un fauteuil d'équipe
+// Produits et prix fictifs, propres au jeu : ce ne sont pas ceux du salon.
+const PRODUCTS = [['Gel coiffant', 12], ['Cire mate', 14], ['Lotion après-rasage', 15], ['Shampoing soin', 16], ['Spray texturisant', 17], ['Huile à barbe', 18]];
+// Étapes d'une prestation : [nom, poids dans la durée]
+const STEPS = { shampoo: ['Shampoing', 2], cut: ['Coupe', 5], beard: ['Barbe', 3], massage: ['Massage crânien', 2.5], soin: ['Soin visage', 2.5], finish: ['Lotion & coiffage', 1.2] };
 
 /* 30 coupes. t = forme du dessus, H = hauteur, sd = côtés (0 rasé … 3 plein),
    fade = [début, fin, opacité restante] du dégradé, hl = ligne du front, tex = texture. */
@@ -114,7 +139,7 @@ const FACTS = [
    2. ÉTAT ET SAUVEGARDE
    ===================================================================== */
 const KEY = 'tsj-v2';
-const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true });
+const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0 });
 let S = fresh();
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch { /* stockage indisponible */ }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
@@ -125,6 +150,16 @@ const autoRate = () => 2 * lvl('apprenti');
 const mult = () => 1 + 0.1 * lvl('lotion') + 0.02 * S.cuts.length;
 const toolCost = (t) => Math.floor(t.base * Math.pow(t.g, lvl(t.id)));
 const svcOf = (id) => SERVICES.find((s) => s.id === id);
+const tierNow = () => { let i = 0; while (i < TIERS.length - 1 && S.total >= TIERS[i + 1].at) i++; return i; };
+const seatPeriod = () => SEAT_TIME * Math.pow(0.9, lvl('formation'));
+const seatPay = () => { // un fauteuil d'équipe encaisse la moyenne de la carte débloquée
+  const own = SERVICES.filter((s) => S.svc.includes(s.id));
+  return Math.max(1, Math.round(own.reduce((a, s) => a + s.price, 0) / own.length * mult() * TIERS[tierNow()].m * 0.6));
+};
+const offerChance = () => 0.06 + 0.015 * lvl('presentoir');
+function earn(x) { S.money += x; S.total += x; }
+let simT = null; // horloge simulée (tests d'équilibrage) ; null = temps réel
+const nowMs = () => (simT === null ? performance.now() : simT);
 const xpNeed = (n) => Math.floor(XP0 * Math.pow(n, 2.2));
 function levelInfo() {
   let l = 1, x = S.xp;
@@ -161,7 +196,84 @@ function codeValid(code) {
 /* =====================================================================
    3. CLIENTS
    ===================================================================== */
-let tufts = [], cutCount = 0, lastPt = { x: 180, y: 190 };
+let tufts = [], foam = [], steps = [], stepI = 0, lastPt = { x: 180, y: 190 };
+
+// Déroulé d'une prestation : shampoing, coupe, barbe, massage, soin, finition.
+function stepsOf(c) {
+  const s = svcOf(c.svc), ks = [];
+  if (s.cut && c.wash) ks.push('shampoo');
+  if (s.cut) ks.push('cut');
+  if (c.b0 === 3) ks.push('beard');
+  if (s.massage) ks.push('massage');
+  if (s.soin) ks.push('soin');
+  ks.push('finish');
+  const tot = ks.reduce((a, x) => a + STEPS[x][1], 0);
+  let acc = 0;
+  return ks.map((x) => { const from = acc; acc += STEPS[x][1] / tot; return { k: x, from, to: acc }; });
+}
+function stepAt() { // étape en cours et avancement dans l'étape
+  const p = S.work / S.client.need;
+  let i = 0;
+  while (i < steps.length - 1 && p >= steps[i].to) i++;
+  return { k: steps[i].k, i, q: clamp((p - steps[i].from) / (steps[i].to - steps[i].from), 0, 1) };
+}
+function stepQ(kind) { // avancement (0 à 1) d'une étape donnée
+  const s = steps.find((x) => x.k === kind);
+  return s ? clamp((S.work / S.client.need - s.from) / (s.to - s.from), 0, 1) : 1;
+}
+// Fait tomber les mèches au fil de la coupe (cheveux) et de la taille (barbe), au plus près du doigt.
+function syncTufts(drop) {
+  for (const kind of ['hair', 'beard']) {
+    let total = 0, gone = 0;
+    for (const t of tufts) if (t.kind === kind) { total++; if (t.gone) gone++; }
+    if (!total) continue;
+    const target = Math.floor(stepQ(kind === 'hair' ? 'cut' : 'beard') * total);
+    while (gone < target) {
+      let best = null, bd = 1e9;
+      for (const t of tufts) {
+        if (t.gone || t.kind !== kind) continue;
+        const d = (t.mx - lastPt.x) ** 2 + (t.my - lastPt.y) ** 2;
+        if (d < bd) { bd = d; best = t; }
+      }
+      if (!best) break;
+      if (drop) dropTuft(best); else best.gone = true;
+      gone++;
+    }
+  }
+}
+function checkTier() {
+  const tn = tierNow();
+  if (tn <= (S.tier || 0)) return;
+  S.tier = tn;
+  buildBg(); sfx('level');
+  modal(`<h3>Nouvel univers : ${TIERS[tn].n}</h3><p>${TIERS[tn].d}</p><p class="muted">Ces clients paient x${String(TIERS[tn].m).replace('.', ',')} le tarif de base.</p>`);
+  if (tab === 'biz') renderPanel();
+}
+
+/* ---------- Vente de produits ---------- */
+let offer = null, offerTimer = 0;
+function showOffer(c) {
+  const p = PRODUCTS[rnd(PRODUCTS.length)];
+  offer = { n: p[0], p: Math.round(p[1] * TIERS[c.tier || 0].m), c: S.served };
+  const el = $('offer');
+  el.innerHTML = `<small>Le client hésite…</small><b>${offer.n}</b><span>Vendre · ${offer.p} €</span>`;
+  el.style.left = (8 + rnd(38)) + '%'; el.style.top = (22 + rnd(30)) + '%';
+  el.hidden = false;
+  clearTimeout(offerTimer);
+  offerTimer = setTimeout(() => { el.hidden = true; offer = null; }, 4500);
+}
+function sellOffer() {
+  if (!offer) return;
+  earn(offer.p);
+  S.sales.unshift({ t: Date.now(), n: offer.n, p: offer.p, c: offer.c });
+  S.sales.length = Math.min(S.sales.length, 40);
+  S.salesN++; S.salesSum += offer.p;
+  toast(`<b>Vendu : ${offer.n}</b><br>+${offer.p} € · à retrouver dans « Mon salon ».`);
+  sfx('coin');
+  clearTimeout(offerTimer); $('offer').hidden = true; offer = null;
+  checkTier(); renderStats(); save();
+  if (tab === 'biz') renderPanel();
+}
 
 function newClient() {
   const owned = SERVICES.filter((s) => S.svc.includes(s.id));
@@ -177,28 +289,32 @@ function newClient() {
   }
   const hasBeard = svc.beard !== undefined;
   const stubble = svc.kid ? 0 : rnd(2);
+  const tn = tierNow(); // la plupart des clients viennent de l'univers atteint, quelques habitués restent
+  const tier = tn && Math.random() < 0.3 ? rnd(tn) : tn;
   S.client = {
+    tier, xp: Math.round((20 + svc.min) * TIER_XP[tier]), fit: rnd(4), wash: S.served === 0 || Math.random() < 0.6,
     svc: svc.id, cut, skin: rnd(SKINS.length), hair: rnd(HAIRS.length), eye: rnd(EYES.length), seed: rnd(1e9),
     b0: hasBeard ? 3 : stubble, b1: hasBeard ? svc.beard : stubble,
-    need: 20 + svc.min, vip: Math.random() < 0.05 * lvl('bouche'),
+    need: Math.round((20 + svc.min) * TIER_WORK[tier]), vip: Math.random() < 0.05 * lvl('bouche'),
   };
   S.work = 0;
   setupClient();
 }
 
 function setupClient() {
-  buildTufts();
-  cutCount = Math.floor(S.work / S.client.need * tufts.length);
-  for (let i = 0; i < cutCount; i++) tufts[i].gone = true;
+  steps = stepsOf(S.client);
+  stepI = stepAt().i;
+  buildTufts(); buildFoam();
+  syncTufts(false);
   buildClientLayer();
   renderOrder();
 }
 
 function finishClient() {
   const c = S.client, svc = svcOf(c.svc);
-  const pay = Math.round(svc.price * mult() * (c.vip ? 3 : 1));
+  const pay = Math.round(svc.price * mult() * TIERS[c.tier || 0].m * (c.vip ? 3 : 1));
   const before = levelInfo().l;
-  S.money += pay; S.total += pay; S.served++; S.xp += c.need;
+  earn(pay); S.served++; S.xp += c.xp || c.need;
   floatText(`+${fmt(pay)} €`, 180, 150, c.vip ? 'pay vip' : 'pay');
   for (const t of tufts) if (!t.gone) dropTuft(t);
   for (let i = 0; i < 26; i++) spark(110 + rnd(140), 130 + rnd(160));
@@ -213,13 +329,14 @@ function finishClient() {
   } else if (S.served % 3 === 0) toast(`<b>Le saviez-vous ?</b><br>${FACTS[rnd(FACTS.length)]}`);
   if (svc.cut && !S.cuts.includes(c.cut)) S.cuts.push(c.cut);
 
-  phase = 'done'; phaseT = 0.45;
-  renderStats(); checkReward(); save();
+  phase = 'done'; phaseT = 0.7;
+  if (Math.random() < offerChance()) showOffer(c);
+  renderStats(); checkReward(); checkTier(); save();
 }
 
 function levelUp(l) {
   const bonus = l * 15;
-  S.money += bonus;
+  earn(bonus);
   sfx('level');
   const left = REWARD.level - l;
   toast(`<b>Niveau ${l} !</b> Bonus : +${bonus} €<br>` + (S.code ? 'Continuez, la collection vous attend.' : left > 0 ? `Code de réduction dans ${left} niveau${left > 1 ? 'x' : ''}.` : 'Votre code de réduction est tout proche !'));
@@ -243,16 +360,13 @@ function addWork(w) {
   S.work += w;
   const c = S.client;
   if (S.work >= c.need) { S.work = c.need; finishClient(); return; }
-  const target = Math.floor(S.work / c.need * tufts.length);
-  while (cutCount < target) {
-    let best = null, bd = 1e9;
-    for (const t of tufts) {
-      if (t.gone) continue;
-      const d = (t.mx - lastPt.x) ** 2 + (t.my - lastPt.y) ** 2;
-      if (d < bd) { bd = d; best = t; }
-    }
-    if (!best) break;
-    dropTuft(best); cutCount++;
+  syncTufts(true);
+  const i = stepAt().i;
+  if (i !== stepI) { // changement d'activité
+    if (steps[stepI].k === 'shampoo') for (let n = 0; n < 30; n++) puff('drop', 115 + rnd(130), 140 + rnd(70)); // rinçage
+    stepI = i;
+    floatText(STEPS[steps[i].k][0] + ' !', 180, 118, 'step');
+    sfx('step'); renderOrder();
   }
 }
 
@@ -443,7 +557,77 @@ function drawBody(g, c) {
   let gr = g.createLinearGradient(0, 312, 0, 350);
   gr.addColorStop(0, sk[2]); gr.addColorStop(1, sk[0]);
   g.fillStyle = gr; g.fillRect(CX - 25, 300, 50, 54);
-  // cape noire à liseré doré
+  if (c.cape) drawCape(g, c); else drawOutfit(g, c);
+}
+
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16), c = (v) => clamp(Math.round(v * f), 0, 255);
+  return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`;
+}
+function torso(g) {
+  g.beginPath(); g.moveTo(CX - 27, 334);
+  g.bezierCurveTo(CX - 60, 344, CX - 108, 352, CX - 118, 440);
+  g.lineTo(CX + 118, 440);
+  g.bezierCurveTo(CX + 108, 352, CX + 60, 344, CX + 27, 334);
+  g.quadraticCurveTo(CX, 356, CX - 27, 334); g.closePath();
+}
+const TEES = ['#8d99a6', '#5f7f9c', '#6f8f6b', '#a3665a'];
+const SHIRTS = ['#dfe7ee', '#c9d9ea', '#e9dcc6', '#d6c4d8'];
+const SUITS = ['#2b3140', '#3a3a3f', '#27303a', '#40332c'];
+const TIES = ['#8c2f39', '#2f4f8c', '#d9b85f', '#5a3d6b'];
+
+// La tenue du client, visible à l'arrivée et au départ : elle monte en gamme avec l'univers.
+function drawOutfit(g, c) {
+  const t = c.tier || 0, f = c.fit || 0;
+  const base = t === 0 ? TEES[f] : t === 1 ? SHIRTS[f] : t === 2 ? SUITS[f] : t === 5 ? '#b8943c' : '#1a1817';
+  torso(g);
+  let gr = g.createLinearGradient(CX - 120, 340, CX + 120, 440);
+  gr.addColorStop(0, shade(base, 1.25)); gr.addColorStop(1, shade(base, 0.6));
+  g.fillStyle = gr; g.fill();
+  g.save(); torso(g); g.clip();
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  if (t === 1) { // chemise : col et boutons
+    g.strokeStyle = shade(base, 0.72); g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(CX, 358); g.lineTo(CX, 440); g.stroke();
+    for (const sx of [-1, 1]) {
+      g.fillStyle = shade(base, 1.08);
+      g.beginPath(); g.moveTo(CX, 358); g.lineTo(CX + sx * 30, 332); g.lineTo(CX + sx * 36, 366); g.closePath(); g.fill(); g.stroke();
+    }
+    g.fillStyle = shade(base, 0.6);
+    for (const y of [380, 404, 428]) { g.beginPath(); g.arc(CX, y, 2.4, 0, 7); g.fill(); }
+  } else if (t === 2 || t === 5) { // costume (doré pour les légendes)
+    g.fillStyle = t === 5 ? '#151312' : '#f3f3f1';
+    g.beginPath(); g.moveTo(CX - 24, 334); g.quadraticCurveTo(CX, 356, CX + 24, 334); g.lineTo(CX, 432); g.closePath(); g.fill();
+    if (t === 2) {
+      g.fillStyle = TIES[f];
+      g.beginPath(); g.moveTo(CX - 6, 354); g.lineTo(CX + 6, 354); g.lineTo(CX + 9, 408); g.lineTo(CX, 422); g.lineTo(CX - 9, 408); g.closePath(); g.fill();
+      g.fillStyle = shade(TIES[f], 0.7); g.fillRect(CX - 6, 354, 12, 9);
+    }
+    for (const sx of [-1, 1]) {
+      g.fillStyle = t === 5 ? '#151312' : shade(base, 1.35); g.strokeStyle = shade(base, 0.5); g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(CX + sx * 25, 334); g.lineTo(CX + sx * 50, 376); g.lineTo(CX + sx * 32, 380); g.lineTo(CX + sx * 3, 432); g.closePath(); g.fill(); g.stroke();
+    }
+  } else if (t === 3) { // t-shirt de créateur : médaillon soleil doré (motif générique)
+    g.strokeStyle = '#d9b85f'; g.lineWidth = 3;
+    g.beginPath(); g.arc(CX, 410, 21, 0, 7); g.stroke();
+    g.lineWidth = 1.6;
+    for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; g.beginPath(); g.moveTo(CX + Math.cos(a) * 25, 410 + Math.sin(a) * 25); g.lineTo(CX + Math.cos(a) * 31, 410 + Math.sin(a) * 31); g.stroke(); }
+    star(g, CX, 410, 13, '#f3dc98');
+  } else if (t === 4) { // bandes blanches sur les manches
+    g.strokeStyle = '#f1f1ee'; g.lineWidth = 5;
+    for (const sx of [-1, 1]) for (const o of [0, 10]) { g.beginPath(); g.moveTo(CX + sx * (58 + o), 344); g.quadraticCurveTo(CX + sx * (96 + o), 362, CX + sx * (104 + o), 440); g.stroke(); }
+  }
+  g.strokeStyle = 'rgba(0,0,0,.14)'; g.lineWidth = 3;
+  for (const x of [-78, 80]) { g.beginPath(); g.moveTo(CX + x, 384); g.quadraticCurveTo(CX + x * 1.08, 410, CX + x * 1.14, 440); g.stroke(); }
+  g.restore();
+  if (t === 0 || t === 3 || t === 4) { // encolure
+    g.strokeStyle = t === 0 ? shade(base, 0.62) : t === 3 ? '#d9b85f' : '#f1f1ee'; g.lineWidth = 4; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(CX - 27, 335); g.quadraticCurveTo(CX, 357, CX + 27, 335); g.stroke();
+  }
+}
+
+function drawCape(g, c) { // cape noire à liseré doré
+  let gr;
   g.beginPath(); g.moveTo(CX - 32, 336);
   g.bezierCurveTo(CX - 70, 346, CX - 128, 362, CX - 142, 440);
   g.lineTo(CX + 142, 440);
@@ -467,12 +651,52 @@ function star(g, x, y, r, col) {
   g.closePath(); g.fill();
 }
 
+/* ---------- Bijoux (univers Créateurs, Stars, Légendes) ---------- */
+function diamond(g, x, y, s) {
+  const gr = g.createLinearGradient(x - s, y - s, x + s, y + s);
+  gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.5, '#bfe6ff'); gr.addColorStop(1, '#6fb4e6');
+  g.fillStyle = gr;
+  g.beginPath(); g.moveTo(x - s, y - s * 0.3); g.lineTo(x - s * 0.55, y - s * 0.85); g.lineTo(x + s * 0.55, y - s * 0.85); g.lineTo(x + s, y - s * 0.3); g.lineTo(x, y + s); g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = Math.max(0.6, s * 0.09);
+  g.beginPath(); g.moveTo(x - s, y - s * 0.3); g.lineTo(x + s, y - s * 0.3); g.moveTo(x - s * 0.3, y - s * 0.3); g.lineTo(x, y + s); g.lineTo(x + s * 0.3, y - s * 0.3); g.stroke();
+}
+function twinkle(g, x, y, r, ph) {
+  const a = Math.sin(time * 3.2 + ph);
+  if (a <= 0) return;
+  g.globalAlpha = a; g.fillStyle = '#fff';
+  g.beginPath(); g.moveTo(x, y - r * a); g.quadraticCurveTo(x, y, x + r * a, y); g.quadraticCurveTo(x, y, x, y + r * a); g.quadraticCurveTo(x, y, x - r * a, y); g.quadraticCurveTo(x, y, x, y - r * a); g.fill();
+  g.globalAlpha = 1;
+}
+function chain(g, depth, w, col, dash) {
+  g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'butt'; g.setLineDash(dash);
+  g.beginPath(); g.moveTo(CX - 25, 332); g.quadraticCurveTo(CX, 332 + (depth - 332) * 2 - 6, CX + 25, 332); g.stroke();
+  g.setLineDash([]);
+}
+// Dessinés en direct, par-dessus la cape : ils scintillent.
+function drawJewels(g, c) {
+  const t = c.tier || 0;
+  if (t < 3) return;
+  if (t === 3) {
+    chain(g, 372, 3.4, '#e8cc7c', [4, 2]);
+    g.fillStyle = '#f3dc98'; rr(g, CX - 4, 366, 8, 13, 2); g.fill();
+    twinkle(g, CX + 2, 368, 7, 0);
+  } else {
+    if (t === 5) { chain(g, 392, 6, '#f3dc98', [5, 2]); diamond(g, CX, 392, 13); twinkle(g, CX - 5, 386, 12, 2.1); twinkle(g, CX + 17, 366, 7, 4); }
+    chain(g, 370, 4.6, '#e9f4fb', [3, 1.6]);
+    diamond(g, CX, t === 5 ? 368 : 374, t === 5 ? 6 : 9);
+    twinkle(g, CX + 4, 370, 9, 0); twinkle(g, CX - 16, 356, 6, 1.3);
+    for (const sx of [-1, 1]) twinkle(g, CX + sx * 64, 268, 7, sx + 3);
+  }
+}
+
 function drawHead(g, c) {
   const sk = SKINS[c.skin], hp = HAIRS[c.hair];
   for (const sx of [-1, 1]) { // oreilles
     g.fillStyle = sx < 0 ? sk[0] : sk[2];
     g.beginPath(); g.ellipse(CX + sx * 62, 254, 9, 15, sx * 0.12, 0, Math.PI * 2); g.fill();
     g.strokeStyle = sk[2]; g.lineWidth = 1.6; g.beginPath(); g.arc(CX + sx * 62, 254, 5, sx < 0 ? 1.2 : -1.9, sx < 0 ? 5 : 1.9); g.stroke();
+    if ((c.tier || 0) >= 4) diamond(g, CX + sx * 64, 268, 4.5); // boucles en diamant
+    else if (c.tier === 3) { g.fillStyle = '#e8cc7c'; g.beginPath(); g.arc(CX + sx * 64, 267, 3, 0, 7); g.fill(); }
   }
   headPath(g);
   let gr = g.createRadialGradient(CX - 22, 222, 8, CX, 250, 96);
@@ -514,10 +738,17 @@ function drawFaceLive(g, c, mood, blink) {
   }
   if (mood === 'happy') {
     g.fillStyle = '#6b2424'; g.beginPath(); g.moveTo(CX - 17, 294); g.quadraticCurveTo(CX, 300, CX + 17, 294); g.quadraticCurveTo(CX, 316, CX - 17, 294); g.fill();
-    g.fillStyle = '#fff'; g.beginPath(); g.moveTo(CX - 14, 295.5); g.quadraticCurveTo(CX, 300, CX + 14, 295.5); g.quadraticCurveTo(CX, 304, CX - 14, 295.5); g.fill();
+    const grillz = c.tier === 5;
+    if (grillz) { const gz = g.createLinearGradient(CX - 14, 0, CX + 14, 0); gz.addColorStop(0, '#9fd4f5'); gz.addColorStop(0.5, '#ffffff'); gz.addColorStop(1, '#9fd4f5'); g.fillStyle = gz; } else g.fillStyle = '#fff';
+    g.beginPath(); g.moveTo(CX - 14, 295.5); g.quadraticCurveTo(CX, 300, CX + 14, 295.5); g.quadraticCurveTo(CX, 304, CX - 14, 295.5); g.fill();
+    if (grillz) { // sourire en diamant
+      g.strokeStyle = 'rgba(70,130,180,.7)'; g.lineWidth = 0.8;
+      for (let x = -9; x <= 9; x += 4.5) { g.beginPath(); g.moveTo(CX + x, 297); g.lineTo(CX + x, 302); g.stroke(); }
+      twinkle(g, CX + 6, 298, 8, 0.7); twinkle(g, CX - 8, 299, 6, 2.6);
+    }
   } else {
     g.strokeStyle = '#8a3d3a'; g.lineWidth = 2.8; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(CX - 13, 297); g.quadraticCurveTo(CX, 302, CX + 13, 297); g.stroke();
+    g.beginPath(); g.moveTo(CX - 13, 297); g.quadraticCurveTo(CX, mood === 'relax' ? 308 : 302, CX + 13, 297); g.stroke();
     g.strokeStyle = sk[2]; g.lineWidth = 1.5; g.beginPath(); g.moveTo(CX - 6, 305); g.quadraticCurveTo(CX, 307, CX + 6, 305); g.stroke();
   }
 }
@@ -590,13 +821,89 @@ function drawTuft(g, t, pal) {
   g.restore();
 }
 
+/* ---------- Mousse du shampoing et masque du soin ---------- */
+function buildFoam() {
+  const r = rng(S.client.seed + 9);
+  foam = [];
+  for (let i = 0; i < 30; i++) {
+    const th = Math.PI * (0.06 + 0.88 * r()), d = 0.35 + 0.75 * r();
+    foam.push({ x: CX + Math.cos(th) * (RX + 2) * d, y: SKY - 8 - Math.sin(th) * (RY + 14) * d, r: 10 + r() * 9, ph: r() * 6 });
+  }
+}
+function drawFoam(g, q) {
+  const n = Math.ceil(q * foam.length);
+  for (let i = 0; i < n; i++) {
+    const f = foam[i], rad = f.r * (0.92 + 0.08 * Math.sin(time * 5 + f.ph));
+    g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.arc(f.x, f.y, rad, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(150,195,230,.55)'; g.lineWidth = 1.2; g.beginPath(); g.arc(f.x, f.y, rad * 0.62, 3.6, 5.4); g.stroke();
+  }
+}
+function drawMask(g, q) { // le soin s'applique, pose, puis se retire
+  const a = q < 0.6 ? q / 0.6 : (1 - q) / 0.4;
+  g.save(); headPath(g); g.clip();
+  g.globalAlpha = 0.82 * clamp(a, 0, 1); g.fillStyle = '#d5ecd0';
+  g.beginPath(); g.ellipse(CX, 218, 30, 11, 0, 0, 7); g.fill();
+  for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(CX + sx * 34, 276, 17, 15, 0, 0, 7); g.fill(); }
+  g.beginPath(); g.ellipse(CX, 268, 8, 13, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(CX, 314, 20, 8, 0, 0, 7); g.fill();
+  g.restore();
+}
+
 /* ---------- Décor ---------- */
+// Tout ce qui bouge derrière le client : projecteurs, lampes, enseigne, néon, poussières.
+function drawBgLive(g) {
+  const tn = S.tier || 0;
+  let gr;
+  if (tn >= 3) for (const s of [-1, 1]) { // projecteurs des univers haut de gamme
+    g.save(); g.translate(CX + s * 150, -30); g.rotate(Math.sin(time * 0.55 + s) * 0.32 + s * 0.3);
+    gr = g.createLinearGradient(0, 0, 0, 430);
+    gr.addColorStop(0, tn >= 5 ? 'rgba(255,214,120,.24)' : 'rgba(255,255,255,.17)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.beginPath(); g.moveTo(-6, 0); g.lineTo(6, 0); g.lineTo(74, 430); g.lineTo(-74, 430); g.closePath(); g.fill();
+    g.restore();
+  }
+  for (let i = 0; i < 2; i++) { // suspensions qui se balancent
+    const x0 = i ? 326 : 34, lx = x0 + Math.sin(time * 0.9 + i * 2) * 3.5, fl = 0.46 + Math.sin(time * 6 + i * 3) * 0.03;
+    g.strokeStyle = '#1b1917'; g.lineWidth = 2; g.beginPath(); g.moveTo(x0, -300); g.lineTo(lx, 58); g.stroke();
+    gr = g.createRadialGradient(lx, 86, 2, lx, 86, 90);
+    gr.addColorStop(0, `rgba(255,220,150,${fl})`); gr.addColorStop(1, 'rgba(255,220,150,0)');
+    g.fillStyle = gr; g.fillRect(lx - 95, 0, 190, 190);
+    g.fillStyle = '#d9b85f'; g.beginPath(); g.moveTo(lx - 9, 56); g.lineTo(lx + 9, 56); g.lineTo(lx + 24, 84); g.lineTo(lx - 24, 84); g.closePath(); g.fill();
+    g.fillStyle = '#fff6d8'; g.beginPath(); g.ellipse(lx, 85, 12, 5, 0, 0, 7); g.fill();
+  }
+  // enseigne de barbier qui tourne
+  g.fillStyle = '#d9b85f'; rr(g, 320, 150, 26, 10, 4); g.fill(); rr(g, 320, 262, 26, 10, 4); g.fill();
+  g.save(); rr(g, 323, 160, 20, 102, 6); g.clip();
+  g.fillStyle = '#f7f3ea'; g.fillRect(323, 160, 20, 102);
+  const off = (time * 16) % 36;
+  for (let i = -3; i < 9; i++) { g.fillStyle = i & 1 ? '#c8372f' : '#2f55a4'; const y = 160 + i * 18 + off; g.beginPath(); g.moveTo(323, y); g.lineTo(343, y - 12); g.lineTo(343, y - 4); g.lineTo(323, y + 8); g.closePath(); g.fill(); }
+  gr = g.createLinearGradient(323, 0, 343, 0);
+  gr.addColorStop(0, 'rgba(255,255,255,.35)'); gr.addColorStop(0.5, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(0,0,0,.3)');
+  g.fillStyle = gr; g.fillRect(323, 160, 20, 102);
+  g.restore();
+  // néon « OUVERT »
+  const flick = Math.sin(time * 2.2) > -0.96 ? 0.8 + 0.2 * Math.sin(time * 2.6) : 0.25;
+  g.globalAlpha = flick * 0.22; g.strokeStyle = '#ff7fb5'; g.lineWidth = 7; rr(g, 6, 156, 64, 24, 8); g.stroke();
+  g.globalAlpha = flick; g.lineWidth = 1.8; rr(g, 6, 156, 64, 24, 8); g.stroke();
+  g.fillStyle = '#ffd0e4'; g.font = '600 12px Outfit, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('OUVERT', 38, 168.5);
+  g.globalAlpha = 1;
+  // poussières dorées dans la lumière
+  g.fillStyle = tn >= 4 ? '#ffffff' : '#f3dc98';
+  for (let i = 0; i < 14; i++) {
+    const x = ((i * 97 + time * (5 + (i % 4) * 3)) % 440) - 40, y = 40 + (i * 61) % 330 + Math.sin(time * 0.7 + i) * 12;
+    g.globalAlpha = 0.16 + 0.14 * Math.sin(time * 1.3 + i * 2);
+    g.beginPath(); g.arc(x, y, 1.2 + (i % 3) * 0.5, 0, 7); g.fill();
+  }
+  g.globalAlpha = 1;
+  if (tn >= 4) for (let i = 0; i < 7; i++) twinkle(g, 20 + (i * 53) % 330, 30 + (i * 89) % 150, 6 + (i % 3) * 2, i * 1.7); // paillettes
+}
+
 function buildBg() {
   if (!cv.width) return;
   bg.width = cv.width; bg.height = cv.height;
-  const g = bg.getContext('2d'), W = bg.width, Hh = bg.height;
+  const g = bg.getContext('2d'), W = bg.width, Hh = bg.height, wall = TIERS[S.tier || 0].wall;
   let gr = g.createLinearGradient(0, 0, 0, Hh);
-  gr.addColorStop(0, '#4a4640'); gr.addColorStop(0.6, '#3d3934'); gr.addColorStop(1, '#2a2723');
+  gr.addColorStop(0, wall[0]); gr.addColorStop(0.6, wall[1]); gr.addColorStop(1, wall[2]);
   g.fillStyle = gr; g.fillRect(0, 0, W, Hh);
   g.setTransform(k, 0, 0, k, ox, oy);
   // logo du salon au mur, bords fondus
@@ -615,25 +922,7 @@ function buildBg() {
   gr = g.createRadialGradient(CX, 232, 30, CX, 232, 215);
   gr.addColorStop(0, 'rgba(255,226,170,.55)'); gr.addColorStop(0.55, 'rgba(255,214,150,.2)'); gr.addColorStop(1, 'rgba(255,214,150,0)');
   g.fillStyle = gr; g.fillRect(-400, -200, 1160, 900);
-  // suspensions
-  for (const lx of [34, 326]) {
-    g.strokeStyle = '#1b1917'; g.lineWidth = 2; g.beginPath(); g.moveTo(lx, -300); g.lineTo(lx, 58); g.stroke();
-    gr = g.createRadialGradient(lx, 86, 2, lx, 86, 90);
-    gr.addColorStop(0, 'rgba(255,220,150,.5)'); gr.addColorStop(1, 'rgba(255,220,150,0)');
-    g.fillStyle = gr; g.fillRect(lx - 95, 0, 190, 190);
-    g.fillStyle = '#d9b85f'; g.beginPath(); g.moveTo(lx - 9, 56); g.lineTo(lx + 9, 56); g.lineTo(lx + 24, 84); g.lineTo(lx - 24, 84); g.closePath(); g.fill();
-    g.fillStyle = '#fff6d8'; g.beginPath(); g.ellipse(lx, 85, 12, 5, 0, 0, 7); g.fill();
-  }
-  // enseigne de barbier
-  g.fillStyle = '#d9b85f'; rr(g, 320, 150, 26, 10, 4); g.fill(); rr(g, 320, 262, 26, 10, 4); g.fill();
-  g.save(); rr(g, 323, 160, 20, 102, 6); g.clip();
-  g.fillStyle = '#f7f3ea'; g.fillRect(323, 160, 20, 102);
-  for (let i = -2; i < 9; i++) { g.fillStyle = i % 2 ? '#c8372f' : '#2f55a4'; g.beginPath(); g.moveTo(323, 160 + i * 18); g.lineTo(343, 148 + i * 18); g.lineTo(343, 156 + i * 18); g.lineTo(323, 168 + i * 18); g.closePath(); g.fill(); }
-  gr = g.createLinearGradient(323, 0, 343, 0);
-  gr.addColorStop(0, 'rgba(255,255,255,.35)'); gr.addColorStop(0.5, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(0,0,0,.3)');
-  g.fillStyle = gr; g.fillRect(323, 160, 20, 102);
-  g.restore();
-  // étagère et flacons
+  // étagère et flacons (lampes, enseigne et néon sont animés : voir drawBgLive)
   g.fillStyle = '#231f1b'; rr(g, 6, 236, 64, 6, 2); g.fill();
   const bottles = [['#c8372f', 14, 30], ['#d9b85f', 32, 22], ['#3d7a5c', 50, 34]];
   for (const [col, bx, bh] of bottles) {
@@ -657,7 +946,17 @@ const hands = [
 ];
 let snipA = 0, snipV = 0;
 
-function drawHand(g, h, tool) {
+const REACH = { scissors: 62, clipper: 58, comb: 62, none: 28, spray: 50, brush: 60 }; // distance main → pointe de l'outil
+function handTools(st) {
+  if (st === 'shampoo' || st === 'massage') return ['none', 'none'];
+  if (st === 'soin') return ['none', 'brush'];
+  if (st === 'finish') return ['comb', 'spray'];
+  if (st === 'beard') return ['comb', 'clipper'];
+  const cut = CUTS[S.client.cut];
+  return ['comb', (cut.fade || cut.tex === 'buzz') && stepQ('cut') > 0.45 ? 'clipper' : 'scissors'];
+}
+
+function drawHand(g, h, tool, soapy) {
   const sk = SKINS[1];
   const ax = h.side < 0 ? -40 : 400, ay = 480, wx = h.x + h.side * 14, wy = h.y + 12;
   g.lineCap = 'round';
@@ -690,6 +989,18 @@ function drawHand(g, h, tool) {
   } else if (tool === 'comb') {
     g.fillStyle = '#d9b85f'; rr(g, 2, -9, 62, 8, 3); g.fill();
     for (let i = 0; i < 14; i++) g.fillRect(8 + i * 4, -2, 2, 13);
+  } else if (tool === 'spray') { // flacon de lotion
+    const gr = g.createLinearGradient(0, -16, 0, 16);
+    gr.addColorStop(0, '#f3dc98'); gr.addColorStop(1, '#9a7b2c');
+    g.fillStyle = gr; rr(g, 4, -6, 26, 34, 7); g.fill();
+    g.fillStyle = '#141210'; g.fillRect(11, -14, 12, 9); rr(g, 9, -24, 34, 11, 4); g.fill();
+    g.fillStyle = '#f7f3ea'; g.fillRect(43, -21, 5, 5);
+    g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(8, 0, 4, 22);
+  } else if (tool === 'brush') { // pinceau de soin
+    g.fillStyle = '#6b3f26'; rr(g, 2, -4, 40, 8, 4); g.fill();
+    g.fillStyle = '#d9b85f'; g.fillRect(40, -6, 7, 12);
+    g.fillStyle = '#f5ecdc'; rr(g, 46, -7, 17, 14, 6); g.fill();
+    g.fillStyle = '#d5ecd0'; rr(g, 56, -7, 7, 14, 5); g.fill();
   }
   // main
   let gr = g.createRadialGradient(-3, -4, 2, 0, 0, 20);
@@ -703,6 +1014,10 @@ function drawHand(g, h, tool) {
   g.strokeStyle = sk[2]; g.lineWidth = 1;
   for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(9, -13.4 + i * 7); g.lineTo(21, -13.4 + i * 7); g.stroke(); }
   g.fillStyle = sk[1]; g.beginPath(); g.ellipse(2, -14, 6, 9.5, 0.9, 0, 7); g.fill();
+  if (soapy) { // mains pleines de mousse
+    g.fillStyle = 'rgba(255,255,255,.95)';
+    for (let i = 0; i < 5; i++) { g.beginPath(); g.arc(10 + i * 6, -10 + (i * 37 % 20) + Math.sin(time * 6 + i) * 1.5, 5 + (i % 3) * 1.5, 0, 7); g.fill(); }
+  }
   g.restore();
 }
 
@@ -716,6 +1031,16 @@ function dropTuft(t) {
 function bits(x, y, pal) {
   for (let i = 0; i < 5 && parts.length < 110; i++) parts.push({ kind: 'bit', x: x + rnd(18) - 9, y: y + rnd(12) - 6, a: Math.random() * 6, vx: (Math.random() - 0.5) * 160, vy: -60 - Math.random() * 130, va: (Math.random() - 0.5) * 12, life: 0.7, col: pal[rnd(3)] });
 }
+// bulles (bub), gouttes de rinçage (drop), brume de lotion (mist), cœurs du massage (heart)
+function puff(kind, x, y) {
+  if (parts.length > 120) return;
+  const p = { kind, x, y, a: 0, va: 0, vx: (Math.random() - 0.5) * 70, vy: -30 - Math.random() * 60, life: 0.9, r: 3 + Math.random() * 5 };
+  if (kind === 'drop') { p.vy = 40 + Math.random() * 120; p.vx *= 1.6; p.life = 0.7; p.r = 2 + Math.random() * 2.5; }
+  else if (kind === 'mist') { p.vx *= 0.5; p.vy = -10 - Math.random() * 25; p.life = 0.6; p.r = 5 + Math.random() * 7; }
+  else if (kind === 'heart') { p.vx *= 0.6; p.life = 1.1; p.r = 5 + Math.random() * 3; }
+  parts.push(p);
+}
+const GRAV = { spark: 260, bub: -70, mist: 0, heart: -50, drop: 520 };
 function spark(x, y) {
   parts.push({ kind: 'spark', x, y, a: 0, vx: (Math.random() - 0.5) * 180, vy: -120 - Math.random() * 160, va: 0, life: 0.9, col: Math.random() < 0.5 ? '#fff3c4' : '#d9b85f', r: 2 + Math.random() * 3 });
 }
@@ -724,12 +1049,20 @@ function spark(x, y) {
    5. BOUCLE DE JEU
    ===================================================================== */
 let phase = 'cut', phaseT = 0, slide = 0, shake = 0;
-let combo = 0, lastTap = -1e9, blinkT = 3, time = 0, eyeDx = 0, eyeDy = 0;
+let combo = 0, lastTap = -1e9, blinkT = 3, time = 0, eyeDx = 0, eyeDy = 0, capeA = 1;
+const seatT = [];
+let seatBars = [], seatPops = [];
 
 function frame(dt) {
   time += dt;
-  const now = performance.now();
+  const now = nowMs();
   if (now - lastTap < 5000) S.playSec += dt; // temps de jeu actif uniquement
+  for (let i = 0; i < S.seats; i++) { // les fauteuils de l'équipe tournent tout seuls
+    seatT[i] = (seatT[i] || 0) + dt / seatPeriod();
+    if (seatT[i] >= 1) { seatT[i] = 0; const pay = seatPay(); earn(pay); seatPop(i, pay); renderStats(); checkTier(); }
+    if (seatBars[i]) seatBars[i].style.width = (seatT[i] * 100) + '%';
+  }
+  capeA += ((phase === 'cut' ? 1 : 0) - capeA) * (1 - Math.pow(0.0004, dt)); // la cape se pose puis s'enlève
   if (autoRate() && phase === 'cut') {
     lastPt = { x: CX + Math.sin(time * 1.7) * 70, y: 190 + Math.cos(time * 2.3) * 50 };
     addWork(autoRate() * dt);
@@ -741,10 +1074,13 @@ function frame(dt) {
   shake = Math.max(0, shake - dt * 4);
   snipV += (0 - snipA) * 260 * dt; snipV *= Math.pow(0.001, dt); snipA += snipV * dt;
 
+  const stk = phase === 'cut' ? stepAt().k : '';
+  const onHead = stk === 'shampoo' || stk === 'massage'; // les mains restent dans les cheveux
   for (const h of hands) {
     if (h.t > 0) h.t -= dt;
     const bob = Math.sin(time * 2 + h.side) * 4;
-    const gx = h.t > 0 ? h.tx : h.rx, gy = h.t > 0 ? h.ty : h.ry + bob;
+    const rx = onHead ? CX + h.side * (84 + Math.cos(time * 3 + h.side) * 9) : h.rx, ry = onHead ? 200 + Math.sin(time * 3 + h.side) * 12 : h.ry + bob;
+    const gx = h.t > 0 ? h.tx : rx, gy = h.t > 0 ? h.ty : ry;
     const f = 1 - Math.pow(0.000001, dt);
     h.x += (gx - h.x) * f; h.y += (gy - h.y) * f;
   }
@@ -753,7 +1089,7 @@ function frame(dt) {
   eyeDy += (clamp((lastPt.y - 250) / 50, -1.8, 1.8) - eyeDy) * f2;
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i];
-    p.life -= dt; p.vy += (p.kind === 'spark' ? 260 : 620) * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.a += p.va * dt;
+    p.life -= dt; p.vy += (GRAV[p.kind] === undefined ? 620 : GRAV[p.kind]) * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.a += p.va * dt;
     if (p.life <= 0) parts.splice(i, 1);
   }
   draw();
@@ -761,25 +1097,36 @@ function frame(dt) {
 }
 
 function draw() {
-  const c = S.client, svc = svcOf(c.svc), pal = HAIRS[c.hair], g = ctx;
+  if (simT !== null || !steps.length) return; // simulation d'équilibrage ou client pas encore prêt : pas de rendu
+  const c = S.client, pal = HAIRS[c.hair], g = ctx;
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.drawImage(bg, 0, 0);
+  g.setTransform(k, 0, 0, k, ox, oy);
+  drawBgLive(g);
   const sx = Math.sin(time * 70) * shake * 5 * k, ease = slide * slide;
   g.setTransform(k, 0, 0, k, ox + ease * cv.width + sx, oy);
   if (layer.width) g.drawImage(layer, 0, 0, V.w, V.h);
-  const done = phase === 'done';
-  drawFaceLive(g, c, done ? 'happy' : 'neutral', blinkT < 0);
+  const done = phase !== 'cut', st = stepAt();
+  if (capeA > 0.02) { g.globalAlpha = Math.min(1, capeA); drawCape(g, c); g.globalAlpha = 1; }
+  drawJewels(g, c);
+  if (st.k === 'soin' && !done) drawMask(g, st.q);
+  const relax = !done && (st.k === 'massage' || st.k === 'shampoo' || st.k === 'soin');
+  drawFaceLive(g, c, phase === 'done' ? 'happy' : relax ? 'relax' : 'neutral', blinkT < 0 || relax);
   for (const t of tufts) if (!t.gone) drawTuft(g, t, pal);
+  if (st.k === 'shampoo' && !done) drawFoam(g, st.q);
 
   g.setTransform(k, 0, 0, k, ox, oy);
-  const p = S.work / c.need;
-  const massage = svc.massage && p > 0.6 && !done;
-  drawHand(g, hands[0], massage ? 'none' : 'comb');
-  drawHand(g, hands[1], massage ? 'none' : (!svc.cut || CUTS[c.cut].fade || CUTS[c.cut].tex === 'buzz') && p > 0.35 ? 'clipper' : 'scissors');
+  const tl = handTools(st.k);
+  drawHand(g, hands[0], tl[0], st.k === 'shampoo' && !done);
+  drawHand(g, hands[1], tl[1], st.k === 'shampoo' && !done);
 
   for (const q of parts) {
     g.globalAlpha = Math.min(1, q.life * 2.5);
-    if (q.kind === 'tuft') { const t = q.t, sx0 = t.x, sy0 = t.y, sa = t.ang; t.x = q.x; t.y = q.y; t.ang = q.a; drawTuft(g, t, q.pal); t.x = sx0; t.y = sy0; t.ang = sa; }
+    if (q.kind === 'bub') { g.strokeStyle = '#fff'; g.lineWidth = 1.4; g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 7); g.fill(); g.stroke(); }
+    else if (q.kind === 'drop') { g.fillStyle = '#8fd0ff'; g.beginPath(); g.ellipse(q.x, q.y, q.r * 0.7, q.r * 1.3, 0, 0, 7); g.fill(); }
+    else if (q.kind === 'mist') { g.globalAlpha *= 0.35; g.fillStyle = '#fff6d8'; g.beginPath(); g.arc(q.x, q.y, q.r * (1.8 - q.life), 0, 7); g.fill(); }
+    else if (q.kind === 'heart') { g.fillStyle = '#ff8fc0'; const r = q.r; g.beginPath(); g.moveTo(q.x, q.y + r); g.bezierCurveTo(q.x - r * 1.6, q.y - r * 0.2, q.x - r * 0.6, q.y - r * 1.3, q.x, q.y - r * 0.4); g.bezierCurveTo(q.x + r * 0.6, q.y - r * 1.3, q.x + r * 1.6, q.y - r * 0.2, q.x, q.y + r); g.fill(); }
+    else if (q.kind === 'tuft') { const t = q.t, sx0 = t.x, sy0 = t.y, sa = t.ang; t.x = q.x; t.y = q.y; t.ang = q.a; drawTuft(g, t, q.pal); t.x = sx0; t.y = sy0; t.ang = sa; }
     else if (q.kind === 'bit') { g.save(); g.translate(q.x, q.y); g.rotate(q.a); g.fillStyle = q.col; g.fillRect(-4, -1, 8, 2); g.restore(); }
     else star(g, q.x, q.y, q.r * 1.6, q.col);
   }
@@ -802,26 +1149,76 @@ function sfx(type) {
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     if (AC.state === 'suspended') AC.resume();
-    const t = AC.currentTime, out = AC.createGain();
-    out.connect(AC.destination);
-    if (type === 'snip') {
-      if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.06, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
-      const src = AC.createBufferSource(), f = AC.createBiquadFilter();
-      src.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = 3200 + Math.random() * 1500;
-      src.connect(f); f.connect(out);
-      out.gain.setValueAtTime(0.11, t); out.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
-      src.start(t);
-    } else {
-      const notes = type === 'coin' ? [988, 1319] : [523, 659, 784, 1047];
-      notes.forEach((fq, i) => {
-        const o = AC.createOscillator(), g = AC.createGain();
-        o.type = 'triangle'; o.frequency.value = fq; o.connect(g); g.connect(out);
-        const s = t + i * 0.08;
-        g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.09, s + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.22);
-        o.start(s); o.stop(s + 0.25);
-      });
-    }
+    const t = AC.currentTime, out = AC.destination;
+    if (type === 'snip') noise(t, 0.06, 0.11, 'highpass', 3200 + Math.random() * 1500, out);
+    else if (type === 'buzz') tone(95 + Math.random() * 10, t, 0.08, 0.05, 'sawtooth', out);
+    else if (type === 'bub') tone(380 + Math.random() * 200, t, 0.09, 0.08, 'sine', out, 900);
+    else if (type === 'soft') tone([196, 220, 247, 262][rnd(4)], t, 0.22, 0.07, 'sine', out);
+    else if (type === 'spray') noise(t, 0.14, 0.07, 'bandpass', 5200, out);
+    else if (type === 'step') { tone(659, t, 0.14, 0.07, 'triangle', out); tone(988, t + 0.07, 0.2, 0.07, 'triangle', out); }
+    else (type === 'coin' ? [988, 1319] : [523, 659, 784, 1047]).forEach((fq, i) => tone(fq, t + i * 0.08, 0.24, 0.09, 'triangle', out));
   } catch { /* pas de son sur cet appareil */ }
+}
+function tone(fq, t, dur, vol, type, out, fqEnd) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(fq, t);
+  if (fqEnd) o.frequency.exponentialRampToValueAtTime(fqEnd, t + dur);
+  o.connect(g); g.connect(out);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.start(t); o.stop(t + dur + 0.03);
+}
+function noise(t, dur, vol, ftype, fq, out) {
+  if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.3, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  src.buffer = noiseBuf; f.type = ftype; f.frequency.value = fq;
+  src.connect(f); f.connect(g); g.connect(out);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.start(t); src.stop(t + dur + 0.02);
+}
+
+/* ---------- Musique d'ambiance : boucle lo-fi générée, aucun fichier ---------- */
+const BPM = 84, CHORDS = [[57, 60, 64, 67], [53, 57, 60, 64], [48, 52, 55, 59], [55, 59, 62, 64]]; // Am7, Fmaj7, Cmaj7, G6
+const LEAD = [69, 72, 74, 76, 79, 81];
+const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+let musicOn = false, musicTimer = 0, musicGain = null, padFilter = null, nextT = 0, beat16 = 0;
+function musicStart() {
+  if (musicOn || !S.music) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    if (!musicGain) {
+      musicGain = AC.createGain(); musicGain.connect(AC.destination);
+      padFilter = AC.createBiquadFilter(); padFilter.type = 'lowpass'; padFilter.frequency.value = 1100; padFilter.connect(musicGain);
+    }
+    musicGain.gain.setTargetAtTime(0.55, AC.currentTime, 0.3);
+    musicOn = true; nextT = AC.currentTime + 0.1; beat16 = 0;
+    musicTimer = setInterval(musicTick, 90);
+  } catch { /* pas de musique sur cet appareil */ }
+}
+function musicStop() {
+  if (!musicOn) return;
+  musicOn = false; clearInterval(musicTimer);
+  musicGain.gain.setTargetAtTime(0, AC.currentTime, 0.08);
+}
+function musicTick() {
+  const d16 = 60 / BPM / 4;
+  if (nextT < AC.currentTime) nextT = AC.currentTime + 0.05; // retour d'onglet : on repart proprement
+  while (nextT < AC.currentTime + 0.35) {
+    const b = beat16 & 15, ch = CHORDS[(beat16 >> 4) & 3], t = nextT + (b & 1 ? 0.02 : 0);
+    if (b === 0) for (const n of ch) { // nappe
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = 'triangle'; o.frequency.value = mtof(n); o.detune.value = (n % 3 - 1) * 7;
+      o.connect(g); g.connect(padFilter);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.045, t + 0.35); g.gain.linearRampToValueAtTime(0.0001, t + d16 * 16);
+      o.start(t); o.stop(t + d16 * 16 + 0.05);
+    }
+    if (b === 0 || b === 6 || b === 10) tone(mtof(ch[0] - 24), t, 0.32, 0.2, 'sine', musicGain);       // basse
+    if (b === 0 || b === 7 || b === 10) tone(125, t, 0.16, 0.3, 'sine', musicGain, 42);                // grosse caisse
+    if (b === 4 || b === 12) noise(t, 0.11, 0.07, 'bandpass', 1900, musicGain);                        // caisse claire
+    if (!(b & 1)) noise(t, 0.035, b % 4 === 2 ? 0.035 : 0.02, 'highpass', 7500, musicGain);            // charleston
+    if ((b === 2 || b === 5 || b === 9 || b === 14) && Math.random() < 0.4 + 0.06 * (S.tier || 0)) tone(mtof(LEAD[rnd(LEAD.length)]), t, 0.5, 0.05, 'sine', musicGain); // mélodie
+    nextT += d16; beat16 = (beat16 + 1) & 63;
+  }
 }
 
 /* =====================================================================
@@ -843,7 +1240,7 @@ function resize() {
 }
 
 function tapAt(vx, vy) {
-  const now = performance.now();
+  const now = nowMs();
   combo = now - lastTap < 450 ? Math.min(combo + 1, 40) : Math.max(0, combo - 6);
   lastTap = now;
   const crit = Math.random() < 0.06;
@@ -852,24 +1249,29 @@ function tapAt(vx, vy) {
 
   const tx = clamp(vx, 70, 290), ty = clamp(vy, 110, 340);
   lastPt = { x: tx, y: ty };
-  const h = hands[vx < CX ? 0 : 1];
-  h.tx = tx + h.side * 62; h.ty = ty + 12; h.t = 0.22;
-  const o = hands[vx < CX ? 1 : 0];
-  o.tx = clamp(tx - o.side * -40, 90, 270) + o.side * 62; o.ty = ty + 30; o.t = 0.22;
+  const st = phase === 'cut' ? stepAt().k : 'cut', tl = handTools(st);
+  const hi = vx < CX ? 0 : 1, h = hands[hi], o = hands[1 - hi];
+  h.tx = tx + h.side * REACH[tl[hi]]; h.ty = ty + 12; h.t = 0.22;
+  o.tx = clamp(tx - o.side * -40, 90, 270) + o.side * REACH[tl[1 - hi]]; o.ty = ty + 30; o.t = 0.22;
   snipV = 14;
 
   if (phase === 'cut') {
-    bits(tx, ty, HAIRS[S.client.hair]);
+    if (st === 'shampoo') { for (let i = 0; i < 3; i++) puff('bub', tx + rnd(30) - 15, ty + rnd(20) - 10); sfx('bub'); }
+    else if (st === 'massage') { puff('heart', tx + rnd(20) - 10, ty - 10); sfx('soft'); }
+    else if (st === 'soin') { spark(tx, ty); sfx('soft'); }
+    else if (st === 'finish') { for (let i = 0; i < 4; i++) puff('mist', tx + rnd(40) - 20, ty + rnd(30) - 15); sfx('spray'); }
+    else { bits(tx, ty, HAIRS[S.client.hair]); sfx(tl[1] === 'clipper' ? 'buzz' : 'snip'); }
     floatText(crit ? 'Coup de maître !' : '+' + (gain < 10 ? gain.toFixed(1).replace('.', ',') : fmt(gain)), vx + rnd(30) - 15, vy - 22, crit ? 'crit' : '');
     addWork(gain);
-    sfx('snip');
   }
+  musicStart();
   if (navigator.vibrate) { try { navigator.vibrate(crit ? 18 : 6); } catch { /* rien */ } }
   renderCombo();
 }
 
 stage.addEventListener('pointerdown', (e) => {
   e.preventDefault();
+  if (e.target.closest('#offer')) { sellOffer(); return; }
   const r = cv.getBoundingClientRect();
   tapAt(((e.clientX - r.left) * dpr - ox) / k, ((e.clientY - r.top) * dpr - oy) / k);
 });
@@ -929,16 +1331,33 @@ function renderStats() {
 
 function renderOrder() {
   const c = S.client, svc = svcOf(c.svc);
-  $('order-svc').textContent = `Client n° ${S.served + 1} · ${svc.n}`;
+  const st = stepAt();
+  $('order-svc').textContent = `Client ${TIERS[c.tier || 0].n} · ${svc.n}`;
   $('order-price').textContent = (c.vip ? 'x3 · ' : '') + fmtPrice(svc);
-  $('order-cut').textContent = svc.cut ? `Coupe demandée : ${CUTS[c.cut].n}` : 'Barbe uniquement';
+  $('order-cut').textContent = `Étape ${st.i + 1}/${steps.length} : ${STEPS[st.k][0]}` + (svc.cut ? ` · ${CUTS[c.cut].n}` : '');
+  $('ticks').innerHTML = steps.slice(1).map((s) => `<span style="left:${(s.from * 100).toFixed(1)}%"></span>`).join('');
+}
+
+// Bandeau des fauteuils de l'équipe, en bas de la scène
+function renderSeats() {
+  let h = '';
+  for (let i = 0; i < S.seats; i++) h += `<div class="seat"><span>Fauteuil ${i + 2}</span><i><b></b></i><em></em></div>`;
+  $('seats').innerHTML = h;
+  seatBars = [...$('seats').querySelectorAll('b')];
+  seatPops = [...$('seats').querySelectorAll('em')];
+}
+function seatPop(i, pay) {
+  const el = seatPops[i];
+  if (!el) return;
+  el.textContent = `+${fmt(pay)} €`;
+  el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
 }
 
 function portrait(canvas, cutIdx) {
   const kk = 2, g = canvas.getContext('2d');
   canvas.width = 170 * kk; canvas.height = 200 * kk;
   g.setTransform(kk, 0, 0, kk, -95 * kk, -112 * kk);
-  const c = { cut: cutIdx, skin: cutIdx % SKINS.length, hair: cutIdx % HAIRS.length, eye: cutIdx % EYES.length, seed: cutIdx + 5, b1: 0 };
+  const c = { cut: cutIdx, skin: cutIdx % SKINS.length, hair: cutIdx % HAIRS.length, eye: cutIdx % EYES.length, seed: cutIdx + 5, b1: 0, cape: true };
   drawCharacter(g, c, kk, false);
   g.setTransform(kk, 0, 0, kk, -95 * kk, -112 * kk);
   const ex = eyeDx, ey = eyeDy; eyeDx = 0; eyeDy = 0;
@@ -955,6 +1374,21 @@ function renderPanel() {
       h += `<div class="item"><div class="grow"><strong>${t.n}</strong><small>${t.d} · niveau ${lvl(t.id)}</small></div>` +
         (max ? '<span class="tag">MAX</span>' : `<button class="buy" data-tool="${t.id}" data-cost="${cost}">${fmt(cost)} €</button>`) + '</div>';
     }
+  } else if (tab === 'biz') {
+    const tn = tierNow(), nx = TIERS[tn + 1];
+    h += `<h2>Univers : ${TIERS[tn].n}</h2><p>${TIERS[tn].d}</p>`;
+    if (nx) h += `<p class="muted">Prochain univers : <b>${nx.n}</b> à ${fmt(nx.at)} € de gains cumulés (vous : ${fmt(S.total)} €).</p>` +
+      `<div class="bar big"><i style="width:${Math.min(100, (S.total - TIERS[tn].at) / (nx.at - TIERS[tn].at) * 100)}%"></i></div>`;
+    h += '<div class="tiers">' + TIERS.map((t, i) => `<span class="${i <= tn ? 'on' : ''}">${i <= tn ? t.n : '?'}<small>x${String(t.m).replace('.', ',')}</small></span>`).join('') + '</div>';
+    h += `<h2>Fauteuils ${S.seats + 1}/${SEATS.length + 1}</h2>` +
+      '<div class="item owned"><div class="grow"><strong>Fauteuil 1</strong><small>Le vôtre : c\'est ici que vous cliquez.</small></div><span class="tag">Vous</span></div>';
+    for (let i = 0; i < S.seats; i++) h += `<div class="item owned"><div class="grow"><strong>Fauteuil ${i + 2}</strong><small>Un coiffeur de l'équipe : +${fmt(seatPay())} € toutes les ${seatPeriod().toFixed(1).replace('.', ',')} s</small></div><span class="tag">Ouvert</span></div>`;
+    if (S.seats < SEATS.length) h += `<div class="item"><div class="grow"><strong>Ouvrir le fauteuil ${S.seats + 2}</strong><small>Un coiffeur de plus : il encaisse tout seul, sans clic.</small></div><button class="buy" data-seat="1" data-cost="${SEATS[S.seats]}">${fmt(SEATS[S.seats])} €</button></div>`;
+    h += `<h2>Ventes de produits</h2><p class="muted">${S.salesN} vente${S.salesN > 1 ? 's' : ''} · ${fmt(S.salesSum)} € · ${Math.round(offerChance() * 100)} % de chances par client. Quand un client hésite, touchez la bulle avant qu'elle disparaisse.</p>`;
+    h += S.sales.length
+      ? '<table>' + S.sales.map((s) => `<tr><td>${new Date(s.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${s.n}<small class="who">client n° ${s.c}</small></td><td>+${s.p} €</td></tr>`).join('') + '</table>'
+      : '<p class="muted">Aucune vente pour l\'instant.</p>';
+    h += '<p class="muted">Produits, prix des produits et univers sont propres au jeu.</p>';
   } else if (tab === 'menu') {
     h += '<p class="muted">La vraie carte du salon. Débloquez une prestation pour que les clients la demandent.</p>';
     for (const s of SERVICES) {
@@ -1005,6 +1439,11 @@ panel.addEventListener('click', (e) => {
     if (S.money < s.cost || S.svc.includes(s.id)) return;
     S.money -= s.cost; S.svc.push(s.id); sfx('level');
     toast(`<b>Nouvelle prestation : ${s.n}</b><br>Au salon : ${fmtPrice(s)}.`);
+  } else if (b.dataset.seat) {
+    const cost = SEATS[S.seats];
+    if (cost === undefined || S.money < cost) return;
+    S.money -= cost; S.seats++; sfx('level'); renderSeats();
+    toast(`<b>Fauteuil ${S.seats + 1} ouvert !</b><br>Un coiffeur de plus travaille pour le salon.`);
   } else if (b.dataset.cut) {
     selCut = +b.dataset.cut;
   } else if (b.id === 'verify') {
@@ -1013,7 +1452,7 @@ panel.addEventListener('click', (e) => {
     return;
   } else if (b.id === 'reset') {
     if (!confirm('Effacer la partie et recommencer ? Le code de réduction sera perdu.')) return;
-    const snd = S.sound; S = fresh(); S.sound = snd; newClient(); phase = 'cut'; selCut = -1;
+    const snd = S.sound, mus = S.music; S = fresh(); S.sound = snd; S.music = mus; newClient(); phase = 'cut'; selCut = -1; buildBg(); renderSeats();
   } else return;
   save();
   renderPanel();
@@ -1028,16 +1467,36 @@ $('tabs').addEventListener('click', (e) => {
   renderPanel();
 });
 
-$('snd').addEventListener('click', () => { S.sound = !S.sound; $('snd').classList.toggle('off', !S.sound); save(); if (S.sound) sfx('coin'); });
-$('snd').classList.toggle('off', !S.sound);
+// Bouton son : musique + effets → effets seuls → muet
+function renderSnd() {
+  const b = $('snd');
+  b.textContent = S.sound && S.music ? '♫' : '♪';
+  b.classList.toggle('off', !S.sound);
+  b.title = S.sound ? (S.music ? 'Musique et effets' : 'Effets seuls') : 'Muet';
+}
+$('snd').addEventListener('click', () => {
+  if (S.sound && S.music) S.music = false;
+  else if (S.sound) S.sound = false;
+  else { S.sound = true; S.music = true; }
+  if (S.music) musicStart(); else musicStop();
+  renderSnd(); save(); if (S.sound) sfx('coin');
+});
+if (!S.sound) S.music = false;
+renderSnd();
 
-document.addEventListener('visibilitychange', () => { if (document.hidden) save(); last = performance.now(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { save(); if (AC) AC.suspend(); } else if (AC && (S.sound || S.music)) AC.resume();
+  last = performance.now();
+});
 window.addEventListener('resize', resize);
 if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
 setInterval(() => { save(); renderGift(); checkReward(); }, 5000);
 
 /* ---------- Démarrage ---------- */
+S.tier = Math.max(S.tier || 0, tierNow());
+if (S.served) $('hint').hidden = true;
 resize();
+renderSeats();
 if (!S.client || !svcOf(S.client.svc) || !CUTS[S.client.cut]) newClient(); else setupClient();
 renderPanel();
 renderCombo();

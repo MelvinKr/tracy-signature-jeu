@@ -1,20 +1,31 @@
-# Tracy Signature – le jeu
+# Signature Cut by Tracy – le jeu
 
-Clicker en pixel art pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en touchant l'écran,
-on encaisse, on débloque les prestations du salon et on collectionne 30 coupes.
-Pensé pour téléphone en portrait, jouable aussi sur ordinateur.
+Clicker pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en touchant l'écran, on encaisse,
+on débloque les prestations du salon, on collectionne 30 coupes et on gagne un code de réduction.
+Pensé pour téléphone en portrait, adapté aux tablettes et aux ordinateurs.
 
-## État : V1 démo
+## État : V2
 
-Site statique (HTML, CSS, JS), sans serveur ni image : tout le pixel art est dessiné par code dans `app.js`
-sur un canvas de 96 x 104 pixels. La partie est sauvegardée sur le téléphone (`localStorage`).
-Il n'y a pas encore de classement partagé.
+Site statique (HTML, CSS, JS), sans serveur. Le personnage, les coupes et le décor sont dessinés en vectoriel
+sur un canvas (`app.js`), nets sur tous les écrans. La partie est sauvegardée sur l'appareil (`localStorage`).
 
-## Données du salon
+## Réglages (en haut de `app.js`)
 
-Prestations, prix, durées, horaires, adresse et téléphone viennent de la fiche Planity du salon
-(consultée le 12/11/2026). Ils sont regroupés en haut de `app.js` dans `SALON` et `SERVICES`.
-Les coûts de déblocage, les outils et les 30 coupes de la collection sont propres au jeu.
+- `SALON`, `SERVICES` : adresse, horaires, prestations, prix et durées, repris de la fiche Planity du salon (12/11/2026).
+- `REWARD` : niveau à atteindre, temps de jeu minimum, montant et conditions du code de réduction. **À valider avec Tracy.**
+- `XP0` et `xpNeed` : vitesse des niveaux. Réglage actuel : niveau 12 en 15 à 20 minutes selon la vitesse de clic.
+- `CUTS`, `TOOLS` : coupes de la collection et améliorations, propres au jeu.
+
+## Images (`img/`)
+
+- `logo.jpg` et `real1.jpg` à `real5.jpg` : logo et réalisations, repris de la fiche Planity du salon.
+- `tracy.jpg` (à ajouter) : photo de Tracy, affichée en haut de l'onglet Salon si le fichier existe.
+
+## Code de réduction
+
+Le code (`TS-XXXX-YY`) est généré sur l'appareil du joueur et contient une clé de contrôle. L'onglet Salon propose
+« Vérifier un code » pour Tracy. Le dépôt étant public, cette vérification n'est pas inviolable : elle écarte
+les codes inventés au hasard, pas un tricheur qui lit le code source.
 
 ## Lancer en local
 
@@ -23,9 +34,3 @@ Ouvrir `index.html` dans un navigateur.
 ## Déploiement
 
 Netlify, branche `main`, dossier publié : la racine (voir `netlify.toml`).
-
-## Suite prévue
-
-- Classement partagé pour le concours (Netlify Functions + Blobs), avec contrôle des scores côté serveur.
-- SIRET et mentions du jeu concours.
-- Sons, équilibrage, sprites plus détaillés.

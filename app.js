@@ -378,7 +378,7 @@ function finishClient() {
   }
   for (const t of tufts) if (!t.gone) dropTuft(t);
   for (let i = 0; i < 26; i++) spark(110 + rnd(140), 130 + rnd(160));
-  shake = 1; sfx('cash'); speak(c);
+  shake = 1; sfx('cash'); if (VOICES) speak(c);
 
   const after = levelInfo().l;
   if (after > before) levelUp(after);
@@ -1360,6 +1360,7 @@ const THANKS = [
   ['fr-FR', 'Nickel, à la prochaine !'], ['fr-FR', 'Trop bien, merci !'], ['fr-FR', 'Impeccable !'], ['fr-FR', 'Mercii !'],
   ['en-US', 'Thank you!'], ['en-US', 'Thanks a lot!'], ['en-US', 'Looking fresh, thank you!'], ['en-GB', 'Thank you so much!'], ['es-ES', '¡Gracias!'],
 ];
+const VOICES = false; // désactivé : la synthèse vocale du navigateur sonne mal. Remettre à true pour réessayer.
 let voices = [];
 function loadVoices() { try { voices = speechSynthesis.getVoices(); } catch { /* pas de synthèse vocale */ } }
 if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }

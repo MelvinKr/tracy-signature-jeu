@@ -300,3 +300,17 @@ a { color: var(--gold2); }
 .tile.star canvas { background: radial-gradient(circle at 50% 45%, #a8893c, #4a3b16); }
 .tile.locked .q { color: #6b5d33; }
 @media (prefers-reduced-motion: reduce) { .item.can, #tabs button.dot::after, .chip.bump { animation: none; } }
+
+/* ---------- V5 : classement et pseudo ---------- */
+#rank { width: 34px; height: 34px; border-radius: 50%; padding: 0; background: rgba(0,0,0,.32); border: 1px solid rgba(217,184,95,.35); font: inherit; font-size: 15px; cursor: pointer; }
+@media (max-width: 420px) { #logo { width: 64px; height: 40px; } .hud-right { gap: 5px; } .chip { padding: 0 8px; } }
+.field { width: 100%; height: 48px; padding: 0 14px; margin: 6px 0 10px; border-radius: 12px; border: 1px solid var(--gold); background: rgba(0,0,0,.35); color: var(--text); font: inherit; font-size: 17px; text-align: center; }
+.field:focus { outline: 2px solid var(--gold2); outline-offset: 1px; }
+.board { max-height: 46vh; overflow-y: auto; margin-bottom: 8px; text-align: left; }
+.board td, .board-me td { padding: 7px 4px; font-size: 14px; }
+.board td:first-child, .board-me td:first-child { width: 30px; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.board small, .board-me small { margin-left: 6px; color: var(--muted); font-size: 12px; }
+.board tr:nth-child(1) td:first-child { color: #ffd36b; } .board tr:nth-child(2) td:first-child { color: #d6d6dc; } .board tr:nth-child(3) td:first-child { color: #dd8250; }
+tr.me td { color: var(--gold2); font-weight: 600; background: rgba(217,184,95,.12); }
+.board-me { text-align: left; border-top: 1px dashed var(--gold); }
+.link.inline { display: inline; padding: 0; color: var(--gold2); }

@@ -78,7 +78,7 @@ const PRODUCTS = [['Gel coiffant', 12], ['Cire mate', 14], ['Lotion après-rasag
    n'est reproduit (droit à l'image, droit d'auteur). at = univers minimum, look = tenue (0 à 5 comme les
    univers, 6 = blouson de cuir), col = couleur de tenue, jw = bijoux (3 à 5), acc = accessoires. */
 const STARS = [
-  { n: 'Kenzo le Héros', d: 'Tout droit sorti d\'un manga : bandeau, cicatrice et cheveux bleus.', at: 1, look: 0, col: '#e9e4d8', hair: 7, acc: ['headband', 'scar'] },
+  { n: 'Kenzo le Héros', d: 'Tout droit sorti d\'un manga : bandeau, cicatrice et cheveux bleus.', at: 1, look: 0, col: '#e9e4d8', hair: 7, acc: ['headband', 'scar'], pitch: 1.5, say: [['fr-FR', 'Merci ! Je deviendrai le plus fort !'], ['ja-JP', 'Arigatou !'], ['fr-FR', 'Trop stylé, merci !']] },
   { n: 'Le Streamer', d: 'En live douze heures par jour, casque autour du cou.', at: 1, look: 0, col: '#6b3fa0', acc: ['headphones', 'glasses'] },
   { n: 'Le Pirate', d: 'Un œil, un trésor, et une envie de changer de tête.', at: 1, look: 0, col: '#7a2e2e', acc: ['patch'] },
   { n: 'Le Boss de la Tech', d: 'Blouson de cuir et keynotes : il vend des puces au monde entier.', at: 2, look: 6, hair: 5, acc: ['glasses'] },
@@ -86,12 +86,12 @@ const STARS = [
   { n: 'Le Champion', d: 'Médaille d\'or autour du cou, il sort du podium.', at: 2, look: 4, col: '#1d3f8f', acc: ['medal'] },
   { n: 'Le Chef étoilé', d: 'Trois étoiles et pas un cheveu dans la soupe.', at: 2, look: 1, col: '#f4f4f0', acc: ['stache'] },
   { n: 'Le Rockeur', d: 'Cuir, lunettes noires et larsen.', at: 2, look: 6, acc: ['shades', 'tattoo'] },
-  { n: 'MC Diamant', d: 'Rappeur : il ne sourit que pour montrer ses diamants.', at: 3, look: 4, jw: 5, grillz: true, hair: 0, acc: ['shades'] },
+  { n: 'MC Diamant', d: 'Rappeur : il ne sourit que pour montrer ses diamants.', at: 3, look: 4, jw: 5, grillz: true, hair: 0, acc: ['shades'], pitch: 0.3, say: [['fr-FR', 'Lourd. Merci chef.'], ['en-US', 'Yeah. Thank you.'], ['fr-FR', 'Propre. Très propre.']] },
   { n: 'La Popstar', d: 'Cheveux roses, paillettes et refrain entêtant.', at: 3, look: 5, jw: 4, hair: 6, acc: ['starcheek'] },
   { n: 'DJ Néon', d: 'Il mixe jusqu\'au lever du soleil, lunettes fluo sur le nez.', at: 3, look: 3, acc: ['headphones', 'neon'] },
-  { n: 'El Tornado', d: 'Catcheur masqué : personne n\'a jamais vu son visage.', at: 3, look: 0, col: '#c8372f', acc: ['mask'] },
-  { n: 'Baron Pépite', d: 'Vieux magnat : monocle, moustache blanche et coffre-fort bien rempli.', at: 4, look: 2, col: '#5a2148', hair: 5, jw: 3, acc: ['monocle', 'stache'] },
-  { n: 'Unité IA-26', d: 'Un robot qui veut une coupe « plus humaine ».', at: 4, look: 4, col: '#39424e', skin: 4, hair: 8, acc: ['visor', 'antenna'] },
+  { n: 'El Tornado', d: 'Catcheur masqué : personne n\'a jamais vu son visage.', at: 3, look: 0, col: '#c8372f', acc: ['mask'], pitch: 0.5, say: [['es-ES', '¡Muchas gracias, amigo!'], ['fr-FR', 'Merci ! El Tornado est prêt pour le ring !']] },
+  { n: 'Baron Pépite', d: 'Vieux magnat : monocle, moustache blanche et coffre-fort bien rempli.', at: 4, look: 2, col: '#5a2148', hair: 5, jw: 3, acc: ['monocle', 'stache'], pitch: 0.4, say: [['fr-FR', 'Splendide. Gardez la monnaie !'], ['fr-FR', 'Merci, mon brave !']] },
+  { n: 'Unité IA-26', d: 'Un robot qui veut une coupe « plus humaine ».', at: 4, look: 4, col: '#39424e', skin: 4, hair: 8, acc: ['visor', 'antenna'], pitch: 0.1, say: [['fr-FR', 'Merci. Coupe enregistrée. Bip.'], ['en-US', 'Thank you. Haircut complete.'], ['fr-FR', 'Niveau de style : maximum.']] },
 ];
 const STAR_PAY = 4; // une personnalité paie x4
 // Défis : k = compteur suivi, n = objectifs possibles
@@ -172,7 +172,7 @@ const FACTS = [
    2. ÉTAT ET SAUVEGARDE
    ===================================================================== */
 const KEY = 'tsj-v2';
-const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0, stars: [], stat: {}, mis: [] });
+const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0, stars: [], stat: {}, mis: [], name: '', pid: '' });
 let S = fresh();
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch { /* stockage indisponible */ }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
@@ -378,7 +378,7 @@ function finishClient() {
   }
   for (const t of tufts) if (!t.gone) dropTuft(t);
   for (let i = 0; i < 26; i++) spark(110 + rnd(140), 130 + rnd(160));
-  shake = 1; sfx('coin');
+  shake = 1; sfx('cash'); speak(c);
 
   const after = levelInfo().l;
   if (after > before) levelUp(after);
@@ -1186,6 +1186,7 @@ function puff(kind, x, y) {
 }
 const GRAV = { spark: 260, bub: -70, mist: 0, heart: -50, drop: 520, bill: 430 };
 function cash(n, x, y) { // jet de billets verts
+  if (n >= 6) sfx('bills');
   for (let i = 0; i < n && parts.length < 170; i++) parts.push({ kind: 'bill', x: x + rnd(50) - 25, y, a: Math.random() * 6, va: (Math.random() - 0.5) * 9, vx: (Math.random() - 0.5) * 400, vy: -230 - Math.random() * 300, life: 1.5 + Math.random() * 0.6, ph: Math.random() * 6 });
 }
 function spark(x, y) {
@@ -1327,7 +1328,12 @@ function sfx(type) {
     else if (type === 'bub') tone(380 + Math.random() * 200, t, 0.09, 0.08, 'sine', out, 900);
     else if (type === 'soft') tone([196, 220, 247, 262][rnd(4)], t, 0.22, 0.07, 'sine', out);
     else if (type === 'spray') noise(t, 0.14, 0.07, 'bandpass', 5200, out);
-    else if (type === 'step') { tone(659, t, 0.14, 0.07, 'triangle', out); tone(988, t + 0.07, 0.2, 0.07, 'triangle', out); }
+    else if (type === 'cash') { // caisse enregistreuse : tiroir puis « ka-ching »
+      noise(t, 0.05, 0.12, 'bandpass', 900, out); noise(t + 0.07, 0.04, 0.1, 'highpass', 4000, out);
+      tone(1976, t + 0.1, 0.5, 0.07, 'sine', out); tone(2637, t + 0.1, 0.6, 0.05, 'sine', out); tone(3951, t + 0.12, 0.35, 0.025, 'sine', out);
+    } else if (type === 'bills') { // liasse de billets qu'on effeuille
+      for (let i = 0; i < 7; i++) noise(t + i * 0.045, 0.03, 0.05 + (i % 2) * 0.02, 'bandpass', 2400 + i * 260, out);
+    } else if (type === 'step') { tone(659, t, 0.14, 0.07, 'triangle', out); tone(988, t + 0.07, 0.2, 0.07, 'triangle', out); }
     else (type === 'coin' ? [988, 1319] : [523, 659, 784, 1047]).forEach((fq, i) => tone(fq, t + i * 0.08, 0.24, 0.09, 'triangle', out));
   } catch { /* pas de son sur cet appareil */ }
 }
@@ -1346,6 +1352,32 @@ function noise(t, dur, vol, ftype, fq, out) {
   src.connect(f); f.connect(g); g.connect(out);
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
   src.start(t); src.stop(t + dur + 0.02);
+}
+
+/* ---------- Voix des clients : synthèse vocale du navigateur, aucun fichier ---------- */
+const THANKS = [
+  ['fr-FR', 'Merci !'], ['fr-FR', 'Merci beaucoup !'], ['fr-FR', 'Top, merci !'], ['fr-FR', 'Parfait, merci Tracy !'], ['fr-FR', 'Oh, j\'adore !'],
+  ['fr-FR', 'Nickel, à la prochaine !'], ['fr-FR', 'Trop bien, merci !'], ['fr-FR', 'Impeccable !'], ['fr-FR', 'Mercii !'],
+  ['en-US', 'Thank you!'], ['en-US', 'Thanks a lot!'], ['en-US', 'Looking fresh, thank you!'], ['en-GB', 'Thank you so much!'], ['es-ES', '¡Gracias!'],
+];
+let voices = [];
+function loadVoices() { try { voices = speechSynthesis.getVoices(); } catch { /* pas de synthèse vocale */ } }
+if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function speak(c) {
+  if (!S.sound || simT !== null || !('speechSynthesis' in window)) return;
+  try {
+    if (speechSynthesis.speaking || speechSynthesis.pending) return; // on laisse finir la phrase en cours
+    const r = rng(c.seed + 3), sd = c.star !== undefined && STARS[c.star], svc = svcOf(c.svc);
+    const pick = sd && sd.say ? sd.say[Math.floor(r() * sd.say.length)] : THANKS[Math.floor(Math.random() * THANKS.length)];
+    const u = new SpeechSynthesisUtterance(pick[1]);
+    u.lang = pick[0];
+    // chaque client a sa voix : grave ou aiguë, lente ou pressée
+    u.pitch = sd && sd.pitch !== undefined ? sd.pitch : svc.kid ? 1.7 + r() * 0.3 : 0.5 + r() * 1.1;
+    u.rate = 0.9 + r() * 0.4; u.volume = 0.9;
+    const pool = voices.filter((v) => v.lang && v.lang.slice(0, 2) === pick[0].slice(0, 2));
+    if (pool.length) u.voice = pool[Math.floor(r() * pool.length)];
+    speechSynthesis.speak(u);
+  } catch { /* rien */ }
 }
 
 /* ---------- Musique d'ambiance : boucle lo-fi générée, aucun fichier ---------- */
@@ -1479,8 +1511,58 @@ function toast(html) {
   toastTimer = setTimeout(() => t.classList.remove('on'), 4200);
 }
 
-function modal(html) { $('modal-body').innerHTML = html; $('modal').hidden = false; }
-$('modal-ok').addEventListener('click', () => { $('modal').hidden = true; });
+let modalOk = null; // action du bouton de la fenêtre ; renvoyer false la laisse ouverte
+function modal(html, onOk, label) {
+  $('modal-body').innerHTML = html; $('modal-ok').textContent = label || 'Continuer';
+  modalOk = onOk || null; $('modal').hidden = false;
+}
+$('modal-ok').addEventListener('click', () => {
+  if (modalOk && modalOk() === false) return; // l'action peut aussi avoir ouvert une autre fenêtre
+  modalOk = null; $('modal').hidden = true;
+});
+
+/* ---------- Pseudo et classement partagé (fonction Netlify /api/scores) ---------- */
+const API = '/api/scores', SEASON = 's1'; // changer SEASON remet le classement à zéro (nouveau concours)
+let lastPush = -1;
+const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const cleanName = (s) => String(s || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
+async function pushScore() {
+  if (!S.name || simT !== null || Math.floor(S.total) === lastPush) return null;
+  if (!S.pid) S.pid = (crypto.randomUUID ? crypto.randomUUID() : 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+  const sent = Math.floor(S.total);
+  try {
+    const r = await fetch(`${API}?s=${SEASON}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: S.pid, name: S.name, score: sent, level: levelInfo().l }) });
+    if (!r.ok) return null;
+    lastPush = sent;
+    return await r.json();
+  } catch { return null; }
+}
+function askName(then) {
+  modal('<h3>Votre pseudo</h3><p>Il apparaîtra dans le classement, visible par tous les joueurs.</p>' +
+    `<input id="name-in" class="field" maxlength="16" placeholder="Pseudo (2 à 16 caractères)" value="${esc(S.name)}" autocomplete="off">` +
+    '<p class="muted">Pas de nom complet ni de numéro : un simple pseudo suffit. Vous pouvez laisser vide pour jouer sans classement.</p>', () => {
+    const v = cleanName($('name-in').value);
+    if (v.length === 1) { $('name-in').focus(); return false; }
+    S.name = v; lastPush = -1; save();
+    if (then) { then(); return false; }
+  }, 'Valider');
+}
+async function showBoard() {
+  if (!S.name) { askName(showBoard); return; }
+  modal('<h3>Classement</h3><p class="muted">Chargement…</p>');
+  let d = await pushScore();
+  if (!d) { try { const r = await fetch(`${API}?s=${SEASON}&id=${encodeURIComponent(S.pid)}`); d = r.ok ? await r.json() : null; } catch { d = null; } }
+  if ($('modal').hidden) return;
+  if (!d || !d.top) { modal('<h3>Classement</h3><p>Classement indisponible pour le moment. Vérifiez votre connexion et réessayez.</p>'); return; }
+  const row = (e) => `<tr class="${e.me ? 'me' : ''}"><td>${e.r}</td><td>${esc(e.n)}<small>niv. ${e.l}</small></td><td>${fmt(e.s)} €</td></tr>`;
+  let h = `<h3>Classement</h3><p class="muted">Gains cumulés · ${d.count} joueur${d.count > 1 ? 's' : ''}</p><div class="board"><table>` + d.top.slice(0, 20).map(row).join('') + '</table></div>';
+  if (d.me && d.me.r > 20) h += `<table class="board-me">${row({ ...d.me, me: true })}</table>`;
+  h += `<p class="muted">Vous jouez sous le pseudo <b>${esc(S.name)}</b>. <button class="link inline" id="rename">Changer</button></p>`;
+  modal(h, null, 'Fermer');
+  $('rename').addEventListener('click', () => askName(showBoard));
+}
+$('rank').addEventListener('click', showBoard);
+setInterval(pushScore, 30000);
 
 function renderCombo() {
   const tb = fever > 0;
@@ -1690,7 +1772,7 @@ panel.addEventListener('click', (e) => {
     return;
   } else if (b.id === 'reset') {
     if (!confirm('Effacer la partie et recommencer ? Le code de réduction sera perdu.')) return;
-    const snd = S.sound, mus = S.music; S = fresh(); S.sound = snd; S.music = mus; while (S.mis.length < 3) S.mis.push(newMission()); newClient(); phase = 'cut'; selCut = -1; selStar = -1; buildBg(); renderSeats();
+    const snd = S.sound, mus = S.music, nm = S.name, pid = S.pid; S = fresh(); S.sound = snd; S.music = mus; S.name = nm; S.pid = pid; while (S.mis.length < 3) S.mis.push(newMission()); newClient(); phase = 'cut'; selCut = -1; selStar = -1; buildBg(); renderSeats();
   } else return;
   save();
   renderPanel();
@@ -1742,3 +1824,4 @@ if (!S.client || !svcOf(S.client.svc) || !CUTS[S.client.cut]) newClient(); else 
 renderPanel();
 renderCombo();
 requestAnimationFrame(loop);
+if (!S.name && !S.served) askName(); // première visite : on propose un pseudo pour le classement

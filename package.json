@@ -1,0 +1,9 @@
+{
+  "name": "tracy-signature-jeu",
+  "private": true,
+  "type": "module",
+  "description": "Jeu du salon Signature Cut by Tracy. Site statique ; la seule dépendance sert au classement (fonction Netlify).",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

@@ -4,7 +4,7 @@ Clicker pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en tou
 on débloque les prestations du salon, on fait grandir son salon et on gagne un code de réduction.
 Pensé pour téléphone en portrait, adapté aux tablettes et aux ordinateurs.
 
-## État : V4
+## État : V5
 
 Site statique (HTML, CSS, JS), sans serveur. Le personnage, les coupes et le décor sont dessinés en vectoriel
 sur un canvas (`app.js`), nets sur tous les écrans. La partie est sauvegardée sur l'appareil (`localStorage`).
@@ -32,6 +32,18 @@ Nouveautés de la V4 :
 - **Clic maintenu** : un outil à acheter qui clique tout seul tant qu'on reste appuyé (2 à 8 clics par seconde).
 - **Défis** : trois objectifs en cours, récompense à encaisser.
 - **Panneau** : jauges d'achat sur chaque ligne, pastilles sur les onglets, onglet Album (personnalités + coupes).
+
+Nouveautés de la V5 :
+
+- **Pseudo et classement** : bouton 🏆 en haut. Le score est le total des gains cumulés. Le classement est
+  partagé entre tous les joueurs grâce à une fonction Netlify (`netlify/functions/scores.mjs`, route `/api/scores`)
+  qui stocke pseudo, score et niveau dans Netlify Blobs. Aucune autre donnée n'est collectée.
+  Pour repartir de zéro (nouveau concours), changer `SEASON` dans `app.js`.
+  Limite : le score est envoyé par le navigateur, un tricheur peut donc envoyer un faux score. Les pseudos ne sont
+  ni uniques ni modérés.
+- **Sons** : caisse enregistreuse et billets à chaque encaissement.
+- **Voix** : les clients remercient (« Merci ! », « Thank you! »…) avec la synthèse vocale du navigateur, voix et
+  intonation différentes selon le client. La qualité dépend des voix installées sur l'appareil.
 
 ## Ce qui est réel, ce qui est du jeu
 

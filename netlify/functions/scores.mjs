@@ -10,7 +10,8 @@ const clean = (s) => String(s || '').replace(/[<>&"'`\\\u0000-\u001f]/g, '').rep
 export default async (req) => {
   const url = new URL(req.url);
   const season = (url.searchParams.get('s') || 's1').replace(/[^a-z0-9-]/gi, '').slice(0, 20) || 's1';
-  const store = getStore('scores');
+  // cohérence forte : un score écrit est relu tout de suite (par défaut, la propagation peut prendre une minute)
+  const store = getStore({ name: 'scores', consistency: 'strong' });
   const key = 'board-' + season;
   const board = (await store.get(key, { type: 'json' })) || {};
   let id = String(url.searchParams.get('id') || '').slice(0, 40);

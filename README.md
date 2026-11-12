@@ -4,7 +4,7 @@ Clicker pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en tou
 on débloque les prestations du salon, on fait grandir son salon et on gagne un code de réduction.
 Pensé pour téléphone en portrait, adapté aux tablettes et aux ordinateurs.
 
-## État : V3
+## État : V4
 
 Site statique (HTML, CSS, JS), sans serveur. Le personnage, les coupes et le décor sont dessinés en vectoriel
 sur un canvas (`app.js`), nets sur tous les écrans. La partie est sauvegardée sur l'appareil (`localStorage`).
@@ -21,6 +21,17 @@ Nouveautés de la V3 :
 - **Vente de produits** : parfois un client hésite, une bulle apparaît quelques secondes ; la toucher fait la vente.
   L'historique est dans l'onglet « Mon salon ».
 - **Fauteuils** : jusqu'à 4 fauteuils d'équipe qui encaissent tout seuls.
+
+Nouveautés de la V4 :
+
+- **Personnalités** : 14 clients spéciaux à collectionner (héros de manga, patron de la tech, rappeur, magnat à
+  monocle, robot IA, catcheur masqué…). Ils paient x4. Ce sont des archétypes **originaux** : aucune personne
+  réelle ni personnage existant n'est reproduit (droit à l'image, droit d'auteur), le jeu étant la promotion d'un commerce.
+- **Billets verts** à chaque encaissement, vente et défi réussi.
+- **Turbo** : rythme au maximum = gains x2 pendant 6 secondes.
+- **Clic maintenu** : un outil à acheter qui clique tout seul tant qu'on reste appuyé (2 à 8 clics par seconde).
+- **Défis** : trois objectifs en cours, récompense à encaisser.
+- **Panneau** : jauges d'achat sur chaque ligne, pastilles sur les onglets, onglet Album (personnalités + coupes).
 
 ## Ce qui est réel, ce qui est du jeu
 

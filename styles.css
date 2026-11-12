@@ -281,3 +281,22 @@ a { color: var(--gold2); }
 @media (prefers-reduced-motion: reduce) {
   #hint, .sheet { animation: none; }
 }
+
+/* ---------- V4 : défis, jauges, pastilles, Turbo, personnalités ---------- */
+.item { background: linear-gradient(90deg, rgba(217,184,95,.16) calc(var(--p, 0) * 100%), transparent 0), var(--card); transition: border-color .2s, box-shadow .2s; }
+.item.can { animation: glow 1.6s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 0 1px rgba(217,184,95,.45), 0 6px 22px rgba(217,184,95,.28); } }
+.item.mis { background: linear-gradient(90deg, rgba(127,199,154,.22) calc(var(--p, 0) * 100%), transparent 0), var(--card); border-style: dashed; }
+.item.mis.can { border-style: solid; border-color: var(--ok); }
+.pct { flex: none; font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+#tabs button { position: relative; }
+#tabs button.dot::after { content: ""; position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 50%; background: #ff5e62; border: 2px solid var(--bg); animation: pulse 1.2s ease-in-out infinite; }
+.chip.bump { animation: bump .28s ease-out; }
+@keyframes bump { 40% { transform: scale(1.14); border-color: var(--gold2); } }
+#combo.turbo { border-color: #ffd36b; background: linear-gradient(90deg, rgba(120,70,0,.85), rgba(190,120,10,.85)); color: #fff; }
+#combo.turbo b { background: #fff3c4; }
+#order.star { background: linear-gradient(90deg, #3a2f12, #5a4a20 50%, #3a2f12); }
+#order.star #order-svc { color: var(--gold2); }
+.tile.star canvas { background: radial-gradient(circle at 50% 45%, #a8893c, #4a3b16); }
+.tile.locked .q { color: #6b5d33; }
+@media (prefers-reduced-motion: reduce) { .item.can, #tabs button.dot::after, .chip.bump { animation: none; } }

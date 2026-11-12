@@ -51,6 +51,7 @@ const TOOLS = [
   { id: 'lotion', n: 'Lotion & soin', d: '+10 % sur chaque prestation', base: 150, g: 1.6 },
   { id: 'tondeuse', n: 'Tondeuse pro', d: '+4 de puissance par clic', base: 220, g: 1.5 },
   { id: 'bouche', n: 'Bouche-à-oreille', d: '+5 % de clients généreux (x3)', base: 400, g: 1.7, max: 10 },
+  { id: 'hold', n: 'Clic maintenu', d: 'Restez appuyé : +2 clics automatiques par seconde', base: 300, g: 2.4, max: 4 },
   { id: 'presentoir', n: 'Présentoir produits', d: '+1,5 % de chances de vendre un produit', base: 250, g: 1.6, max: 8 },
   { id: 'formation', n: "Formation de l'équipe", d: 'Les autres fauteuils vont 10 % plus vite', base: 600, g: 1.7, max: 10 },
 ];
@@ -73,6 +74,35 @@ const SEATS = [600, 3500, 15000, 60000]; // prix des fauteuils 2 à 5
 const SEAT_TIME = 12;                    // secondes par client sur un fauteuil d'équipe
 // Produits et prix fictifs, propres au jeu : ce ne sont pas ceux du salon.
 const PRODUCTS = [['Gel coiffant', 12], ['Cire mate', 14], ['Lotion après-rasage', 15], ['Shampoing soin', 16], ['Spray texturisant', 17], ['Huile à barbe', 18]];
+/* Personnalités : archétypes ORIGINAUX inventés pour le jeu. Aucune personne réelle ni personnage existant
+   n'est reproduit (droit à l'image, droit d'auteur). at = univers minimum, look = tenue (0 à 5 comme les
+   univers, 6 = blouson de cuir), col = couleur de tenue, jw = bijoux (3 à 5), acc = accessoires. */
+const STARS = [
+  { n: 'Kenzo le Héros', d: 'Tout droit sorti d\'un manga : bandeau, cicatrice et cheveux bleus.', at: 1, look: 0, col: '#e9e4d8', hair: 7, acc: ['headband', 'scar'] },
+  { n: 'Le Streamer', d: 'En live douze heures par jour, casque autour du cou.', at: 1, look: 0, col: '#6b3fa0', acc: ['headphones', 'glasses'] },
+  { n: 'Le Pirate', d: 'Un œil, un trésor, et une envie de changer de tête.', at: 1, look: 0, col: '#7a2e2e', acc: ['patch'] },
+  { n: 'Le Boss de la Tech', d: 'Blouson de cuir et keynotes : il vend des puces au monde entier.', at: 2, look: 6, hair: 5, acc: ['glasses'] },
+  { n: 'Le Milliardaire pressé', d: 'Costume noir, cravate noire : il a une fusée à prendre.', at: 2, look: 2, col: '#17171a', acc: [] },
+  { n: 'Le Champion', d: 'Médaille d\'or autour du cou, il sort du podium.', at: 2, look: 4, col: '#1d3f8f', acc: ['medal'] },
+  { n: 'Le Chef étoilé', d: 'Trois étoiles et pas un cheveu dans la soupe.', at: 2, look: 1, col: '#f4f4f0', acc: ['stache'] },
+  { n: 'Le Rockeur', d: 'Cuir, lunettes noires et larsen.', at: 2, look: 6, acc: ['shades', 'tattoo'] },
+  { n: 'MC Diamant', d: 'Rappeur : il ne sourit que pour montrer ses diamants.', at: 3, look: 4, jw: 5, grillz: true, hair: 0, acc: ['shades'] },
+  { n: 'La Popstar', d: 'Cheveux roses, paillettes et refrain entêtant.', at: 3, look: 5, jw: 4, hair: 6, acc: ['starcheek'] },
+  { n: 'DJ Néon', d: 'Il mixe jusqu\'au lever du soleil, lunettes fluo sur le nez.', at: 3, look: 3, acc: ['headphones', 'neon'] },
+  { n: 'El Tornado', d: 'Catcheur masqué : personne n\'a jamais vu son visage.', at: 3, look: 0, col: '#c8372f', acc: ['mask'] },
+  { n: 'Baron Pépite', d: 'Vieux magnat : monocle, moustache blanche et coffre-fort bien rempli.', at: 4, look: 2, col: '#5a2148', hair: 5, jw: 3, acc: ['monocle', 'stache'] },
+  { n: 'Unité IA-26', d: 'Un robot qui veut une coupe « plus humaine ».', at: 4, look: 4, col: '#39424e', skin: 4, hair: 8, acc: ['visor', 'antenna'] },
+];
+const STAR_PAY = 4; // une personnalité paie x4
+// Défis : k = compteur suivi, n = objectifs possibles
+const MISSIONS = [
+  { k: 'served', t: (n) => `Coiffer ${n} clients`, n: [5, 8, 12] },
+  { k: 'taps', t: (n) => `Faire ${n} clics`, n: [150, 300, 500] },
+  { k: 'crits', t: (n) => `Réussir ${n} coups de maître`, n: [5, 10, 15] },
+  { k: 'sales', t: (n) => `Vendre ${n} produit${n > 1 ? 's' : ''}`, n: [1, 2] },
+  { k: 'turbo', t: (n) => `Déclencher ${n} Turbo`, n: [1, 2, 3] },
+  { k: 'stars', t: (n) => `Coiffer ${n} personnalité${n > 1 ? 's' : ''}`, n: [1, 2] },
+];
 // Étapes d'une prestation : [nom, poids dans la durée]
 const STEPS = { shampoo: ['Shampoing', 2], cut: ['Coupe', 5], beard: ['Barbe', 3], massage: ['Massage crânien', 2.5], soin: ['Soin visage', 2.5], finish: ['Lotion & coiffage', 1.2] };
 
@@ -116,10 +146,13 @@ const CUTS = [
 const SKINS = [
   ['#f1c9a5', '#fbe0c6', '#d49f78'], ['#e2b188', '#f2cba6', '#bf8a5e'],
   ['#b98253', '#d19c6c', '#925d37'], ['#7b4c2f', '#96623f', '#57331d'],
+  ['#aab4bf', '#d5dde5', '#76808c'], // 4 : métal (robot), réservé aux personnalités
 ];
+const N_SKIN = 4, N_HAIR = 6; // les clients ordinaires piochent dans les premières teintes
 const HAIRS = [
   ['#26201f', '#5a4c4a', '#0f0c0c'], ['#4b2f20', '#7d5236', '#2a180f'], ['#7c5230', '#a97a4c', '#52341b'],
   ['#d6ae56', '#f4d98f', '#a07a2c'], ['#b3552d', '#dd8250', '#7c3516'], ['#a3a3aa', '#d6d6dc', '#6d6d75'],
+  ['#e85fa0', '#ff9cc8', '#a8376d'], ['#3f7fd6', '#7fb2f5', '#234f8f'], ['#5f6b78', '#9aa7b5', '#39424e'], // rose, bleu, acier
 ];
 const EYES = ['#5b3a21', '#3d6b8c', '#4d7a4a', '#2e2a26'];
 
@@ -139,7 +172,7 @@ const FACTS = [
    2. ÉTAT ET SAUVEGARDE
    ===================================================================== */
 const KEY = 'tsj-v2';
-const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0 });
+const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0, stars: [], stat: {}, mis: [] });
 let S = fresh();
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch { /* stockage indisponible */ }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
@@ -158,6 +191,16 @@ const seatPay = () => { // un fauteuil d'équipe encaisse la moyenne de la carte
 };
 const offerChance = () => 0.06 + 0.015 * lvl('presentoir');
 function earn(x) { S.money += x; S.total += x; }
+/* ---------- Défis ---------- */
+const bump = (k) => { S.stat[k] = (S.stat[k] || 0) + 1; };
+const misProg = (m) => Math.max(0, Math.min(m.n, (S.stat[MISSIONS[m.m].k] || 0) - m.from));
+const misReward = () => seatPay() * 6;
+function newMission() {
+  const used = S.mis.map((m) => m.m);
+  let i;
+  do { i = rnd(MISSIONS.length); } while (used.includes(i) || (MISSIONS[i].k === 'stars' && tierNow() < 1));
+  return { m: i, n: MISSIONS[i].n[rnd(MISSIONS[i].n.length)], from: S.stat[MISSIONS[i].k] || 0 };
+}
 let simT = null; // horloge simulée (tests d'équilibrage) ; null = temps réel
 const nowMs = () => (simT === null ? performance.now() : simT);
 const xpNeed = (n) => Math.floor(XP0 * Math.pow(n, 2.2));
@@ -267,7 +310,7 @@ function sellOffer() {
   earn(offer.p);
   S.sales.unshift({ t: Date.now(), n: offer.n, p: offer.p, c: offer.c });
   S.sales.length = Math.min(S.sales.length, 40);
-  S.salesN++; S.salesSum += offer.p;
+  S.salesN++; S.salesSum += offer.p; bump('sales'); cash(6, CX, 260);
   toast(`<b>Vendu : ${offer.n}</b><br>+${offer.p} € · à retrouver dans « Mon salon ».`);
   sfx('coin');
   clearTimeout(offerTimer); $('offer').hidden = true; offer = null;
@@ -290,10 +333,20 @@ function newClient() {
   const hasBeard = svc.beard !== undefined;
   const stubble = svc.kid ? 0 : rnd(2);
   const tn = tierNow(); // la plupart des clients viennent de l'univers atteint, quelques habitués restent
-  const tier = tn && Math.random() < 0.3 ? rnd(tn) : tn;
+  let star = -1; // de temps en temps, une personnalité pousse la porte (de préférence une nouvelle)
+  if (S.served >= 3 && Math.random() < 0.06) {
+    const pool = [];
+    STARS.forEach((s, i) => { if (s.at <= tn) pool.push(i); });
+    const unseen = pool.filter((i) => !S.stars.includes(i));
+    const from = unseen.length && Math.random() < 0.7 ? unseen : pool;
+    if (from.length) star = from[rnd(from.length)];
+  }
+  const tier = star < 0 && tn && Math.random() < 0.3 ? rnd(tn) : tn;
+  const sd = star >= 0 ? STARS[star] : {};
   S.client = {
+    ...(star >= 0 ? { star, look: sd.look, col: sd.col, jw: sd.jw || 0, grillz: !!sd.grillz } : {}),
     tier, xp: Math.round((20 + svc.min) * TIER_XP[tier]), fit: rnd(4), wash: S.served === 0 || Math.random() < 0.6,
-    svc: svc.id, cut, skin: rnd(SKINS.length), hair: rnd(HAIRS.length), eye: rnd(EYES.length), seed: rnd(1e9),
+    svc: svc.id, cut, skin: sd.skin !== undefined ? sd.skin : rnd(N_SKIN), hair: sd.hair !== undefined ? sd.hair : rnd(N_HAIR), eye: rnd(EYES.length), seed: rnd(1e9),
     b0: hasBeard ? 3 : stubble, b1: hasBeard ? svc.beard : stubble,
     need: Math.round((20 + svc.min) * TIER_WORK[tier]), vip: Math.random() < 0.05 * lvl('bouche'),
   };
@@ -312,10 +365,17 @@ function setupClient() {
 
 function finishClient() {
   const c = S.client, svc = svcOf(c.svc);
-  const pay = Math.round(svc.price * mult() * TIERS[c.tier || 0].m * (c.vip ? 3 : 1));
+  const isStar = c.star !== undefined && STARS[c.star];
+  const pay = Math.round(svc.price * mult() * TIERS[c.tier || 0].m * (c.vip ? 3 : 1) * (isStar ? STAR_PAY : 1));
   const before = levelInfo().l;
   earn(pay); S.served++; S.xp += c.xp || c.need;
-  floatText(`+${fmt(pay)} €`, 180, 150, c.vip ? 'pay vip' : 'pay');
+  bump('served');
+  floatText(`+${fmt(pay)} €`, 180, 150, c.vip || isStar ? 'pay vip' : 'pay');
+  cash(8 + 5 * (c.tier || 0) + (isStar ? 14 : 0), CX, 300); // pluie de billets
+  if (isStar) {
+    bump('stars');
+    if (!S.stars.includes(c.star)) { S.stars.push(c.star); toast(`<b>Nouvelle personnalité : ${isStar.n}</b><br>${isStar.d}`); if (tab === 'cuts') renderPanel(); }
+  }
   for (const t of tufts) if (!t.gone) dropTuft(t);
   for (let i = 0; i < 26; i++) spark(110 + rnd(140), 130 + rnd(160));
   shake = 1; sfx('coin');
@@ -578,8 +638,8 @@ const TIES = ['#8c2f39', '#2f4f8c', '#d9b85f', '#5a3d6b'];
 
 // La tenue du client, visible à l'arrivée et au départ : elle monte en gamme avec l'univers.
 function drawOutfit(g, c) {
-  const t = c.tier || 0, f = c.fit || 0;
-  const base = t === 0 ? TEES[f] : t === 1 ? SHIRTS[f] : t === 2 ? SUITS[f] : t === 5 ? '#b8943c' : '#1a1817';
+  const t = c.look !== undefined ? c.look : c.tier || 0, f = c.fit || 0;
+  const base = c.col || (t === 0 ? TEES[f] : t === 1 ? SHIRTS[f] : t === 2 ? SUITS[f] : t === 5 ? '#b8943c' : '#1a1817');
   torso(g);
   let gr = g.createLinearGradient(CX - 120, 340, CX + 120, 440);
   gr.addColorStop(0, shade(base, 1.25)); gr.addColorStop(1, shade(base, 0.6));
@@ -613,6 +673,17 @@ function drawOutfit(g, c) {
     g.lineWidth = 1.6;
     for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; g.beginPath(); g.moveTo(CX + Math.cos(a) * 25, 410 + Math.sin(a) * 25); g.lineTo(CX + Math.cos(a) * 31, 410 + Math.sin(a) * 31); g.stroke(); }
     star(g, CX, 410, 13, '#f3dc98');
+  } else if (t === 6) { // blouson de cuir ouvert sur un t-shirt
+    g.fillStyle = '#2a2826';
+    g.beginPath(); g.moveTo(CX - 24, 334); g.quadraticCurveTo(CX, 356, CX + 24, 334); g.lineTo(CX + 10, 440); g.lineTo(CX - 10, 440); g.closePath(); g.fill();
+    for (const sx of [-1, 1]) {
+      g.fillStyle = '#34312e'; g.strokeStyle = '#0a0908'; g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(CX + sx * 25, 334); g.lineTo(CX + sx * 54, 366); g.lineTo(CX + sx * 30, 392); g.lineTo(CX + sx * 10, 440); g.lineTo(CX + sx * 12, 372); g.closePath(); g.fill(); g.stroke();
+      g.strokeStyle = '#b9bcc4'; g.lineWidth = 1.6; g.setLineDash([2, 2]);
+      g.beginPath(); g.moveTo(CX + sx * 11, 374); g.lineTo(CX + sx * 10, 440); g.stroke(); g.setLineDash([]);
+    }
+    g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 2;
+    for (const x of [-92, -70, 70, 92]) { g.beginPath(); g.moveTo(CX + x, 370); g.lineTo(CX + x * 1.06, 440); g.stroke(); }
   } else if (t === 4) { // bandes blanches sur les manches
     g.strokeStyle = '#f1f1ee'; g.lineWidth = 5;
     for (const sx of [-1, 1]) for (const o of [0, 10]) { g.beginPath(); g.moveTo(CX + sx * (58 + o), 344); g.quadraticCurveTo(CX + sx * (96 + o), 362, CX + sx * (104 + o), 440); g.stroke(); }
@@ -674,7 +745,7 @@ function chain(g, depth, w, col, dash) {
 }
 // Dessinés en direct, par-dessus la cape : ils scintillent.
 function drawJewels(g, c) {
-  const t = c.tier || 0;
+  const t = c.jw !== undefined ? c.jw : c.tier || 0;
   if (t < 3) return;
   if (t === 3) {
     chain(g, 372, 3.4, '#e8cc7c', [4, 2]);
@@ -686,6 +757,79 @@ function drawJewels(g, c) {
     diamond(g, CX, t === 5 ? 368 : 374, t === 5 ? 6 : 9);
     twinkle(g, CX + 4, 370, 9, 0); twinkle(g, CX - 16, 356, 6, 1.3);
     for (const sx of [-1, 1]) twinkle(g, CX + sx * 64, 268, 7, sx + 3);
+  }
+}
+
+/* ---------- Accessoires des personnalités ---------- */
+// under = true : ce qui passe sous les yeux et la bouche (masque, bandeau) ; false : par-dessus (lunettes…)
+function drawAcc(g, c, under) {
+  const s = c.star !== undefined && STARS[c.star];
+  if (!s) return;
+  const has = (a) => s.acc.includes(a), hp = HAIRS[c.hair];
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  if (under) {
+    if (has('mask')) { // masque de catcheur
+      g.save(); headPath(g); g.clip();
+      g.fillStyle = '#c8372f'; g.fillRect(CX - 70, 196, 140, 140);
+      g.strokeStyle = '#f3dc98'; g.lineWidth = 3;
+      for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(CX + sx * 24, 250, 16, 12, sx * 0.25, 0, 7); g.stroke(); g.beginPath(); g.moveTo(CX + sx * 44, 226); g.quadraticCurveTo(CX + sx * 30, 212, CX + sx * 8, 222); g.stroke(); }
+      g.beginPath(); g.ellipse(CX, 299, 24, 13, 0, 0, 7); g.stroke();
+      g.fillStyle = SKINS[c.skin][0]; for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(CX + sx * 24, 250, 14, 10, sx * 0.25, 0, 7); g.fill(); }
+      g.beginPath(); g.ellipse(CX, 299, 22, 11, 0, 0, 7); g.fill();
+      g.restore();
+    }
+    if (has('headband')) {
+      g.save(); headPath(g); g.clip(); g.fillStyle = '#c8372f'; g.fillRect(CX - 70, 204, 140, 13); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(CX - 70, 206, 140, 2.5); g.restore();
+      g.fillStyle = '#c8372f'; g.beginPath(); g.moveTo(CX + 58, 208); g.lineTo(CX + 84, 222); g.lineTo(CX + 78, 232); g.lineTo(CX + 60, 216); g.closePath(); g.fill();
+    }
+    if (has('scar')) { g.strokeStyle = '#a8543f'; g.lineWidth = 2; g.beginPath(); g.moveTo(CX + 30, 264); g.lineTo(CX + 42, 284); g.moveTo(CX + 31, 273); g.lineTo(CX + 39, 270); g.moveTo(CX + 35, 280); g.lineTo(CX + 43, 277); g.stroke(); }
+    if (has('tattoo')) { g.fillStyle = '#2b2f3a'; g.beginPath(); g.moveTo(CX - 40, 262); g.lineTo(CX - 33, 272); g.lineTo(CX - 38, 272); g.lineTo(CX - 34, 284); g.lineTo(CX - 44, 270); g.lineTo(CX - 39, 270); g.closePath(); g.fill(); }
+    if (has('starcheek')) star(g, CX + 38, 274, 7, '#ff8fc0');
+    return;
+  }
+  if (has('shades') || has('neon')) {
+    const col = has('neon') ? '#7dff5a' : '#121110';
+    g.fillStyle = col; g.strokeStyle = has('neon') ? '#2f8f1d' : '#3a3632'; g.lineWidth = 2;
+    for (const sx of [-1, 1]) { rr(g, CX + sx * 24 - 15, 240, 30, 20, 7); g.fill(); g.stroke(); }
+    g.lineWidth = 3; g.beginPath(); g.moveTo(CX - 9, 247); g.lineTo(CX + 9, 247); g.moveTo(CX - 39, 246); g.lineTo(CX - 58, 244); g.moveTo(CX + 39, 246); g.lineTo(CX + 58, 244); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2; for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(CX + sx * 24 - 9, 245); g.lineTo(CX + sx * 24 - 2, 245); g.stroke(); }
+  }
+  if (has('glasses')) {
+    g.strokeStyle = '#2a2826'; g.lineWidth = 2.2;
+    for (const sx of [-1, 1]) { rr(g, CX + sx * 24 - 14, 240, 28, 19, 6); g.stroke(); }
+    g.beginPath(); g.moveTo(CX - 10, 247); g.lineTo(CX + 10, 247); g.moveTo(CX - 38, 246); g.lineTo(CX - 58, 244); g.moveTo(CX + 38, 246); g.lineTo(CX + 58, 244); g.stroke();
+  }
+  if (has('visor')) { // regard de robot
+    g.fillStyle = '#10151c'; rr(g, CX - 44, 239, 88, 22, 9); g.fill();
+    g.fillStyle = `rgba(90,220,255,${0.7 + 0.3 * Math.sin(time * 4)})`;
+    for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(CX + sx * 22 + eyeDx, 250, 8, 4.5, 0, 0, 7); g.fill(); }
+  }
+  if (has('monocle')) {
+    g.strokeStyle = '#e8cc7c'; g.lineWidth = 2.6; g.beginPath(); g.arc(CX + 24, 250, 14, 0, 7); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.14)'; g.fill();
+    g.lineWidth = 1.2; g.beginPath(); g.moveTo(CX + 36, 258); g.quadraticCurveTo(CX + 52, 290, CX + 40, 322); g.stroke();
+  }
+  if (has('patch')) {
+    g.strokeStyle = '#121110'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(CX - 58, 226); g.lineTo(CX + 58, 258); g.stroke();
+    g.fillStyle = '#121110'; g.beginPath(); g.ellipse(CX - 24, 250, 15, 12, 0, 0, 7); g.fill();
+  }
+  if (has('stache')) {
+    g.fillStyle = hp[1]; g.strokeStyle = hp[2]; g.lineWidth = 1;
+    for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(CX, 285); g.quadraticCurveTo(CX + sx * 14, 279, CX + sx * 27, 288); g.quadraticCurveTo(CX + sx * 30, 283, CX + sx * 31, 280); g.quadraticCurveTo(CX + sx * 30, 296, CX + sx * 14, 294); g.quadraticCurveTo(CX + sx * 4, 293, CX, 289); g.closePath(); g.fill(); g.stroke(); }
+  }
+  if (has('antenna')) {
+    g.strokeStyle = '#76808c'; g.lineWidth = 3; g.beginPath(); g.moveTo(CX + 66, 246); g.lineTo(CX + 80, 214); g.stroke();
+    g.fillStyle = Math.sin(time * 5) > 0 ? '#ff5e62' : '#7a2f31'; g.beginPath(); g.arc(CX + 80, 212, 4.5, 0, 7); g.fill();
+  }
+  if (has('headphones')) { // casque autour du cou
+    g.strokeStyle = '#17171a'; g.lineWidth = 7; g.beginPath(); g.moveTo(CX - 34, 330); g.quadraticCurveTo(CX, 362, CX + 34, 330); g.stroke();
+    for (const sx of [-1, 1]) { g.fillStyle = '#17171a'; rr(g, CX + sx * 36 - 9, 318, 18, 28, 8); g.fill(); g.fillStyle = '#7dff5a'; g.fillRect(CX + sx * 36 - 2, 326, 4, 12); }
+  }
+  if (has('medal')) {
+    g.strokeStyle = '#2f55a4'; g.lineWidth = 6; g.beginPath(); g.moveTo(CX - 22, 334); g.lineTo(CX, 372); g.stroke();
+    g.strokeStyle = '#c8372f'; g.beginPath(); g.moveTo(CX + 22, 334); g.lineTo(CX, 372); g.stroke();
+    g.fillStyle = '#e8cc7c'; g.beginPath(); g.arc(CX, 380, 11, 0, 7); g.fill();
+    g.strokeStyle = '#9a7b2c'; g.lineWidth = 1.5; g.stroke(); star(g, CX, 380, 6, '#fff3c4'); twinkle(g, CX + 5, 375, 8, 1);
   }
 }
 
@@ -738,7 +882,7 @@ function drawFaceLive(g, c, mood, blink) {
   }
   if (mood === 'happy') {
     g.fillStyle = '#6b2424'; g.beginPath(); g.moveTo(CX - 17, 294); g.quadraticCurveTo(CX, 300, CX + 17, 294); g.quadraticCurveTo(CX, 316, CX - 17, 294); g.fill();
-    const grillz = c.tier === 5;
+    const grillz = c.grillz !== undefined ? c.grillz : c.tier === 5;
     if (grillz) { const gz = g.createLinearGradient(CX - 14, 0, CX + 14, 0); gz.addColorStop(0, '#9fd4f5'); gz.addColorStop(0.5, '#ffffff'); gz.addColorStop(1, '#9fd4f5'); g.fillStyle = gz; } else g.fillStyle = '#fff';
     g.beginPath(); g.moveTo(CX - 14, 295.5); g.quadraticCurveTo(CX, 300, CX + 14, 295.5); g.quadraticCurveTo(CX, 304, CX - 14, 295.5); g.fill();
     if (grillz) { // sourire en diamant
@@ -1040,7 +1184,10 @@ function puff(kind, x, y) {
   else if (kind === 'heart') { p.vx *= 0.6; p.life = 1.1; p.r = 5 + Math.random() * 3; }
   parts.push(p);
 }
-const GRAV = { spark: 260, bub: -70, mist: 0, heart: -50, drop: 520 };
+const GRAV = { spark: 260, bub: -70, mist: 0, heart: -50, drop: 520, bill: 430 };
+function cash(n, x, y) { // jet de billets verts
+  for (let i = 0; i < n && parts.length < 170; i++) parts.push({ kind: 'bill', x: x + rnd(50) - 25, y, a: Math.random() * 6, va: (Math.random() - 0.5) * 9, vx: (Math.random() - 0.5) * 400, vy: -230 - Math.random() * 300, life: 1.5 + Math.random() * 0.6, ph: Math.random() * 6 });
+}
 function spark(x, y) {
   parts.push({ kind: 'spark', x, y, a: 0, vx: (Math.random() - 0.5) * 180, vy: -120 - Math.random() * 160, va: 0, life: 0.9, col: Math.random() < 0.5 ? '#fff3c4' : '#d9b85f', r: 2 + Math.random() * 3 });
 }
@@ -1050,6 +1197,8 @@ function spark(x, y) {
    ===================================================================== */
 let phase = 'cut', phaseT = 0, slide = 0, shake = 0;
 let combo = 0, lastTap = -1e9, blinkT = 3, time = 0, eyeDx = 0, eyeDy = 0, capeA = 1;
+const FEVER = 6; // durée du Turbo, en secondes
+let fever = 0, hold = null, holdAcc = 0;
 const seatT = [];
 let seatBars = [], seatPops = [];
 
@@ -1061,6 +1210,16 @@ function frame(dt) {
     seatT[i] = (seatT[i] || 0) + dt / seatPeriod();
     if (seatT[i] >= 1) { seatT[i] = 0; const pay = seatPay(); earn(pay); seatPop(i, pay); renderStats(); checkTier(); }
     if (seatBars[i]) seatBars[i].style.width = (seatT[i] * 100) + '%';
+  }
+  if (hold && lvl('hold')) { // clic maintenu
+    holdAcc += dt * 2 * lvl('hold');
+    while (holdAcc >= 1) { holdAcc--; tapAt(hold.x + rnd(14) - 7, hold.y + rnd(14) - 7); }
+  }
+  if (fever > 0) { // Turbo : gains x2, billets qui tombent
+    fever -= dt;
+    if (Math.random() < dt * 9 && parts.length < 170) parts.push({ kind: 'bill', x: rnd(360), y: -12, a: Math.random() * 6, va: (Math.random() - 0.5) * 6, vx: (Math.random() - 0.5) * 60, vy: 40, life: 1.6, ph: Math.random() * 6 });
+    if (fever <= 0) combo = 0;
+    renderCombo();
   }
   capeA += ((phase === 'cut' ? 1 : 0) - capeA) * (1 - Math.pow(0.0004, dt)); // la cape se pose puis s'enlève
   if (autoRate() && phase === 'cut') {
@@ -1111,7 +1270,9 @@ function draw() {
   drawJewels(g, c);
   if (st.k === 'soin' && !done) drawMask(g, st.q);
   const relax = !done && (st.k === 'massage' || st.k === 'shampoo' || st.k === 'soin');
+  drawAcc(g, c, true);
   drawFaceLive(g, c, phase === 'done' ? 'happy' : relax ? 'relax' : 'neutral', blinkT < 0 || relax);
+  drawAcc(g, c, false);
   for (const t of tufts) if (!t.gone) drawTuft(g, t, pal);
   if (st.k === 'shampoo' && !done) drawFoam(g, st.q);
 
@@ -1120,9 +1281,20 @@ function draw() {
   drawHand(g, hands[0], tl[0], st.k === 'shampoo' && !done);
   drawHand(g, hands[1], tl[1], st.k === 'shampoo' && !done);
 
+  if (fever > 0) { // voile doré pendant le Turbo
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = `rgba(255,200,80,${0.09 + 0.05 * Math.sin(time * 12)})`; g.fillRect(0, 0, cv.width, cv.height);
+    g.setTransform(k, 0, 0, k, ox, oy);
+  }
   for (const q of parts) {
     g.globalAlpha = Math.min(1, q.life * 2.5);
-    if (q.kind === 'bub') { g.strokeStyle = '#fff'; g.lineWidth = 1.4; g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 7); g.fill(); g.stroke(); }
+    if (q.kind === 'bill') { // billet vert qui virevolte
+      g.save(); g.translate(q.x, q.y); g.rotate(q.a); g.scale(1, Math.cos(time * 9 + q.ph));
+      g.fillStyle = '#3fae5a'; rr(g, -13, -7, 26, 14, 2); g.fill();
+      g.strokeStyle = '#d7f5dc'; g.lineWidth = 1; rr(g, -10.5, -4.5, 21, 9, 1.5); g.stroke();
+      g.fillStyle = '#d7f5dc'; g.beginPath(); g.arc(0, 0, 2.8, 0, 7); g.fill();
+      g.restore();
+    } else if (q.kind === 'bub') { g.strokeStyle = '#fff'; g.lineWidth = 1.4; g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 7); g.fill(); g.stroke(); }
     else if (q.kind === 'drop') { g.fillStyle = '#8fd0ff'; g.beginPath(); g.ellipse(q.x, q.y, q.r * 0.7, q.r * 1.3, 0, 0, 7); g.fill(); }
     else if (q.kind === 'mist') { g.globalAlpha *= 0.35; g.fillStyle = '#fff6d8'; g.beginPath(); g.arc(q.x, q.y, q.r * (1.8 - q.life), 0, 7); g.fill(); }
     else if (q.kind === 'heart') { g.fillStyle = '#ff8fc0'; const r = q.r; g.beginPath(); g.moveTo(q.x, q.y + r); g.bezierCurveTo(q.x - r * 1.6, q.y - r * 0.2, q.x - r * 0.6, q.y - r * 1.3, q.x, q.y - r * 0.4); g.bezierCurveTo(q.x + r * 0.6, q.y - r * 1.3, q.x + r * 1.6, q.y - r * 0.2, q.x, q.y + r); g.fill(); }
@@ -1226,7 +1398,9 @@ function musicTick() {
    ===================================================================== */
 const $ = (id) => document.getElementById(id);
 const bar = $('bar'), stage = $('stage'), panel = $('panel');
-let tab = 'tools', selCut = -1, toastTimer = 0;
+let tab = 'tools', selCut = -1, selStar = -1, toastTimer = 0, misSig = '', lastMoney = 0;
+const tabBtn = {};
+document.querySelectorAll('#tabs button').forEach((b) => { tabBtn[b.dataset.tab] = b; });
 
 function resize() {
   const r = stage.getBoundingClientRect();
@@ -1244,7 +1418,12 @@ function tapAt(vx, vy) {
   combo = now - lastTap < 450 ? Math.min(combo + 1, 40) : Math.max(0, combo - 6);
   lastTap = now;
   const crit = Math.random() < 0.06;
-  const gain = power() * (1 + combo / 40) * (crit ? 5 : 1);
+  if (combo >= 40 && fever <= 0) { // rythme au maximum : Turbo
+    fever = FEVER; bump('turbo'); sfx('level');
+    floatText('TURBO x2 !', 180, 92, 'step'); cash(14, CX, 200);
+  }
+  const gain = power() * (1 + combo / 40) * (crit ? 5 : 1) * (fever > 0 ? 2 : 1);
+  bump('taps'); if (crit) bump('crits');
   $('hint').hidden = true;
 
   const tx = clamp(vx, 70, 290), ty = clamp(vy, 110, 340);
@@ -1272,9 +1451,13 @@ function tapAt(vx, vy) {
 stage.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   if (e.target.closest('#offer')) { sellOffer(); return; }
-  const r = cv.getBoundingClientRect();
-  tapAt(((e.clientX - r.left) * dpr - ox) / k, ((e.clientY - r.top) * dpr - oy) / k);
+  hold = toV(e); holdAcc = 0;
+  tapAt(hold.x, hold.y);
 });
+// Clic maintenu : tant que le doigt reste posé, l'outil « Clic maintenu » clique tout seul
+const toV = (e) => { const r = cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) * dpr - ox) / k, y: ((e.clientY - r.top) * dpr - oy) / k }; };
+stage.addEventListener('pointermove', (e) => { if (hold) hold = toV(e); });
+for (const ev of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(ev, () => { hold = null; });
 stage.addEventListener('contextmenu', (e) => e.preventDefault());
 
 function floatText(txt, vx, vy, cls) {
@@ -1300,9 +1483,11 @@ function modal(html) { $('modal-body').innerHTML = html; $('modal').hidden = fal
 $('modal-ok').addEventListener('click', () => { $('modal').hidden = true; });
 
 function renderCombo() {
-  $('combo-txt').textContent = 'Rythme x' + (1 + combo / 40).toFixed(1).replace('.', ',');
-  $('combo-bar').style.width = (combo / 40 * 100) + '%';
-  $('combo').classList.toggle('on', combo >= 5 && !$('toast').classList.contains('on'));
+  const tb = fever > 0;
+  $('combo-txt').textContent = tb ? 'TURBO x2' : 'Rythme x' + (1 + combo / 40).toFixed(1).replace('.', ',');
+  $('combo-bar').style.width = (tb ? fever / FEVER : combo / 40) * 100 + '%';
+  $('combo').classList.toggle('turbo', tb);
+  $('combo').classList.toggle('on', (tb || combo >= 5) && !$('toast').classList.contains('on'));
 }
 
 function renderGift() {
@@ -1319,21 +1504,40 @@ $('gift').addEventListener('click', () => {
 
 function renderStats() {
   const li = levelInfo();
+  // Défis : on ne reconstruit le panneau que lorsqu'un défi devient encaissable (sinon un clic en cours serait perdu)
+  const sig = S.mis.map((m) => misProg(m) >= m.n).join();
+  if (sig !== misSig) { misSig = sig; if (tab === 'tools') { renderPanel(); return; } }
+  if (tab === 'tools') panel.querySelectorAll('.mis').forEach((el, i) => {
+    const m = S.mis[i]; if (!m) return;
+    const p = misProg(m), pc = el.querySelector('.pct');
+    el.style.setProperty('--p', p / m.n);
+    el.querySelector('small').textContent = `${p}/${m.n} · récompense ${fmt(misReward())} €`;
+    if (pc) pc.textContent = Math.floor(p / m.n * 100) + ' %';
+  });
   $('money').textContent = fmt(S.money);
+  if (S.money > lastMoney) { const ch = $('money').parentNode; ch.classList.remove('bump'); void ch.offsetWidth; ch.classList.add('bump'); }
+  lastMoney = S.money;
   $('lvl-n').textContent = 'Niv. ' + li.l;
   $('xp').style.width = (li.x / li.need * 100) + '%';
   panel.querySelectorAll('.buy').forEach((b) => {
-    const can = S.money >= +b.dataset.cost;
-    b.disabled = !can; b.closest('.item').classList.toggle('can', can);
+    const cost = +b.dataset.cost, can = S.money >= cost, it = b.closest('.item');
+    b.disabled = !can; it.classList.toggle('can', can);
+    if (cost) it.style.setProperty('--p', Math.min(1, S.money / cost)); // jauge : ce qu'il manque pour acheter
   });
+  // pastilles sur les onglets : quelque chose vous attend
+  tabBtn.tools.classList.toggle('dot', S.mis.some((m) => misProg(m) >= m.n));
+  tabBtn.biz.classList.toggle('dot', SEATS[S.seats] !== undefined && S.money >= SEATS[S.seats]);
+  tabBtn.menu.classList.toggle('dot', SERVICES.some((s) => !S.svc.includes(s.id) && S.money >= s.cost));
   renderGift();
 }
 
 function renderOrder() {
   const c = S.client, svc = svcOf(c.svc);
   const st = stepAt();
-  $('order-svc').textContent = `Client ${TIERS[c.tier || 0].n} · ${svc.n}`;
-  $('order-price').textContent = (c.vip ? 'x3 · ' : '') + fmtPrice(svc);
+  const sd = c.star !== undefined && STARS[c.star];
+  $('order-svc').textContent = `${sd ? '★ ' + sd.n : 'Client ' + TIERS[c.tier || 0].n} · ${svc.n}`;
+  $('order').classList.toggle('star', !!sd);
+  $('order-price').textContent = (sd ? `x${STAR_PAY} · ` : c.vip ? 'x3 · ' : '') + fmtPrice(svc);
   $('order-cut').textContent = `Étape ${st.i + 1}/${steps.length} : ${STEPS[st.k][0]}` + (svc.cut ? ` · ${CUTS[c.cut].n}` : '');
   $('ticks').innerHTML = steps.slice(1).map((s) => `<span style="left:${(s.from * 100).toFixed(1)}%"></span>`).join('');
 }
@@ -1343,6 +1547,7 @@ function renderSeats() {
   let h = '';
   for (let i = 0; i < S.seats; i++) h += `<div class="seat"><span>Fauteuil ${i + 2}</span><i><b></b></i><em></em></div>`;
   $('seats').innerHTML = h;
+  if (S.seats) $('hint').hidden = true;
   seatBars = [...$('seats').querySelectorAll('b')];
   seatPops = [...$('seats').querySelectorAll('em')];
 }
@@ -1353,21 +1558,30 @@ function seatPop(i, pay) {
   el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
 }
 
-function portrait(canvas, cutIdx) {
-  const kk = 2, g = canvas.getContext('2d');
+function portrait(canvas, cutIdx, si) {
+  const kk = 2, g = canvas.getContext('2d'), s = STARS[si];
   canvas.width = 170 * kk; canvas.height = 200 * kk;
   g.setTransform(kk, 0, 0, kk, -95 * kk, -112 * kk);
-  const c = { cut: cutIdx, skin: cutIdx % SKINS.length, hair: cutIdx % HAIRS.length, eye: cutIdx % EYES.length, seed: cutIdx + 5, b1: 0, cape: true };
+  const c = s
+    ? { star: si, cut: (si * 7 + 4) % CUTS.length, skin: s.skin !== undefined ? s.skin : si % N_SKIN, hair: s.hair !== undefined ? s.hair : si % N_HAIR, eye: si % EYES.length, seed: si + 50, b1: 0, tier: s.at, look: s.look, col: s.col, jw: s.jw || 0, grillz: !!s.grillz, fit: si % 4 }
+    : { cut: cutIdx, skin: cutIdx % N_SKIN, hair: cutIdx % N_HAIR, eye: cutIdx % EYES.length, seed: cutIdx + 5, b1: 0, cape: true };
   drawCharacter(g, c, kk, false);
   g.setTransform(kk, 0, 0, kk, -95 * kk, -112 * kk);
   const ex = eyeDx, ey = eyeDy; eyeDx = 0; eyeDy = 0;
-  drawFaceLive(g, c, 'neutral', false);
+  if (s) { drawJewels(g, c); drawAcc(g, c, true); }
+  drawFaceLive(g, c, s ? 'happy' : 'neutral', false);
+  if (s) drawAcc(g, c, false);
   eyeDx = ex; eyeDy = ey;
 }
 
 function renderPanel() {
   let h = '';
   if (tab === 'tools') {
+    h += '<h2>Défis</h2>' + S.mis.map((m, i) => {
+      const p = misProg(m), ok = p >= m.n;
+      return `<div class="item mis ${ok ? 'can' : ''}" style="--p:${p / m.n}"><div class="grow"><strong>${MISSIONS[m.m].t(m.n)}</strong><small>${p}/${m.n} · récompense ${fmt(misReward())} €</small></div>` +
+        (ok ? `<button class="buy" data-mis="${i}" data-cost="0">Encaisser</button>` : `<span class="pct">${Math.floor(p / m.n * 100)} %</span>`) + '</div>';
+    }).join('') + '<h2>Améliorations</h2>';
     h += `<p class="muted">Puissance : ${power()} par clic · Auto : ${autoRate()}/s · Tarifs : x${mult().toFixed(2).replace('.', ',')}</p>`;
     for (const t of TOOLS) {
       const max = t.max && lvl(t.id) >= t.max, cost = toolCost(t);
@@ -1401,6 +1615,16 @@ function renderPanel() {
     const info = selCut >= 0
       ? `<strong>${CUTS[selCut].n}</strong><br>${CUTS[selCut].d}`
       : 'Touchez une coupe pour la découvrir. Chaque coupe trouvée ajoute +2 % à vos tarifs.';
+    const sinfo = selStar >= 0
+      ? `<strong>${STARS[selStar].n}</strong><br>${STARS[selStar].d}`
+      : `Des clients pas comme les autres poussent parfois la porte. Ils paient x${STAR_PAY} et rejoignent votre album.`;
+    h += `<h2>Personnalités ${S.stars.length}/${STARS.length}</h2><div class="cut-info">${sinfo}</div><div class="grid">`;
+    STARS.forEach((s, i) => {
+      h += S.stars.includes(i)
+        ? `<button class="tile star ${i === selStar ? 'sel' : ''}" data-star="${i}"><canvas></canvas><span>${s.n}</span></button>`
+        : `<div class="tile locked"><div class="q">★</div><span>Univers ${TIERS[s.at].n}</span></div>`;
+    });
+    h += '</div><p class="muted">Personnages inventés pour le jeu : toute ressemblance serait fortuite.</p>';
     h += `<h2>Collection ${S.cuts.length}/${CUTS.length}</h2><div class="cut-info">${info}</div><div class="grid">`;
     CUTS.forEach((c, i) => {
       h += S.cuts.includes(i)
@@ -1423,7 +1647,11 @@ function renderPanel() {
       '<button class="link" id="reset">Recommencer la partie</button>';
   }
   panel.innerHTML = h;
-  if (tab === 'cuts') panel.querySelectorAll('.tile[data-cut]').forEach((b) => portrait(b.querySelector('canvas'), +b.dataset.cut));
+  misSig = S.mis.map((m) => misProg(m) >= m.n).join();
+  if (tab === 'cuts') {
+    panel.querySelectorAll('.tile[data-cut]').forEach((b) => portrait(b.querySelector('canvas'), +b.dataset.cut));
+    panel.querySelectorAll('.tile[data-star]').forEach((b) => portrait(b.querySelector('canvas'), 0, +b.dataset.star));
+  }
   renderStats();
 }
 
@@ -1444,6 +1672,16 @@ panel.addEventListener('click', (e) => {
     if (cost === undefined || S.money < cost) return;
     S.money -= cost; S.seats++; sfx('level'); renderSeats();
     toast(`<b>Fauteuil ${S.seats + 1} ouvert !</b><br>Un coiffeur de plus travaille pour le salon.`);
+  } else if (b.dataset.mis) {
+    const i = +b.dataset.mis, m = S.mis[i];
+    if (!m || misProg(m) < m.n) return;
+    const r = misReward();
+    earn(r); S.mis.splice(i, 1); S.mis.push(newMission());
+    sfx('level'); cash(16, CX, 240);
+    toast(`<b>Défi réussi !</b><br>+${fmt(r)} € · un nouveau défi vous attend.`);
+    checkTier();
+  } else if (b.dataset.star) {
+    selStar = +b.dataset.star;
   } else if (b.dataset.cut) {
     selCut = +b.dataset.cut;
   } else if (b.id === 'verify') {
@@ -1452,7 +1690,7 @@ panel.addEventListener('click', (e) => {
     return;
   } else if (b.id === 'reset') {
     if (!confirm('Effacer la partie et recommencer ? Le code de réduction sera perdu.')) return;
-    const snd = S.sound, mus = S.music; S = fresh(); S.sound = snd; S.music = mus; newClient(); phase = 'cut'; selCut = -1; buildBg(); renderSeats();
+    const snd = S.sound, mus = S.music; S = fresh(); S.sound = snd; S.music = mus; while (S.mis.length < 3) S.mis.push(newMission()); newClient(); phase = 'cut'; selCut = -1; selStar = -1; buildBg(); renderSeats();
   } else return;
   save();
   renderPanel();
@@ -1495,6 +1733,9 @@ setInterval(() => { save(); renderGift(); checkReward(); }, 5000);
 /* ---------- Démarrage ---------- */
 S.tier = Math.max(S.tier || 0, tierNow());
 if (S.served) $('hint').hidden = true;
+S.stars = S.stars || []; S.stat = S.stat || {}; S.mis = (S.mis || []).filter((m) => MISSIONS[m.m]);
+while (S.mis.length < 3) S.mis.push(newMission());
+lastMoney = S.money;
 resize();
 renderSeats();
 if (!S.client || !svcOf(S.client.svc) || !CUTS[S.client.cut]) newClient(); else setupClient();

@@ -30,6 +30,7 @@ const REWARD = { level: 12, minMinutes: 15, label: '-10 %', terms: 'Valable une 
 // Concours : dates au format 'AAAA-MM-JJ' (vide = « dates à venir »). Lots À VALIDER avec Tracy.
 const CONTEST = { start: '', end: '', prizes: ['1er : une coupe offerte', '2e, 3e et 4e : une réduction (montant à confirmer)'] };
 const X = {}; // points d'accroche remplis par plus.js (V6 : événements, franchise, trophées, décoration…)
+const COIN = 'Ŧ'; // monnaie du jeu : le Tracy coin. Les euros ne servent qu'aux vrais prix du salon.
 const XP0 = 65; // vitesse des niveaux (voir xpNeed) : niveau 12 vers 10-12 min en jouant vite, le plancher de 15 min fait le reste
 
 // La vraie carte du salon : prix et durées Planity. "cost" = prix de déblocage dans le jeu.
@@ -185,7 +186,7 @@ const HAIRS = [
 ];
 const EYES = ['#5b3a21', '#3d6b8c', '#4d7a4a', '#2e2a26'];
 
-const fmtPrice = (s) => `${s.price} € · ${s.min} min`;
+const fmtPrice = (s) => `${s.price} € · ${s.min} min`; // prix réel du salon : en euros
 const FACTS = [
   `Le salon est au <b>${SALON.address}</b>.`,
   'Réservation en ligne <b>24h/24 sur Planity</b>.',
@@ -332,7 +333,7 @@ function showOffer(c) {
   const p = PRODUCTS[rnd(PRODUCTS.length)];
   offer = { n: p[0], p: Math.round(p[1] * TIERS[c.tier || 0].m), c: S.served };
   const el = $('offer');
-  el.innerHTML = `<small>Le client hésite…</small><b>${offer.n}</b><span>Vendre · ${offer.p} €</span>`;
+  el.innerHTML = `<small>Le client hésite…</small><b>${offer.n}</b><span>Vendre · ${offer.p} Ŧ</span>`;
   el.style.left = (8 + rnd(38)) + '%'; el.style.top = (22 + rnd(30)) + '%';
   el.hidden = false;
   clearTimeout(offerTimer);
@@ -344,7 +345,7 @@ function sellOffer() {
   S.sales.unshift({ t: Date.now(), n: offer.n, p: offer.p, c: offer.c });
   S.sales.length = Math.min(S.sales.length, 40);
   S.salesN++; S.salesSum += offer.p; bump('sales'); cash(6, CX, 260);
-  toast(`<b>Vendu : ${offer.n}</b><br>+${offer.p} € · à retrouver dans « Mon salon ».`);
+  toast(`<b>Vendu : ${offer.n}</b><br>+${offer.p} Ŧ · à retrouver dans « Mon salon ».`);
   sfx('coin');
   clearTimeout(offerTimer); $('offer').hidden = true; offer = null;
   checkTier(); renderStats(); save();
@@ -405,7 +406,7 @@ function finishClient(tip) {
   const before = levelInfo().l;
   earn(pay); S.served++; S.xp += c.xp || c.need;
   bump('served');
-  floatText(`+${fmt(pay)} €`, 180, 150, c.vip || isStar ? 'pay vip' : 'pay');
+  floatText(`+${fmt(pay)} Ŧ`, 180, 150, c.vip || isStar ? 'pay vip' : 'pay');
   cash(8 + 5 * (c.tier || 0) + (isStar ? 14 : 0), CX, 300); // pluie de billets
   if (isStar) {
     bump('stars');
@@ -434,8 +435,9 @@ function levelUp(l) {
   const bonus = l * 15;
   earn(bonus);
   sfx('level');
+  if (X.levelUp) X.levelUp(l, bonus);
   const left = REWARD.level - l;
-  toast(`<b>Niveau ${l} !</b> Bonus : +${bonus} €<br>` + (S.code ? 'Continuez, la collection vous attend.' : left > 0 ? `Code de réduction dans ${left} niveau${left > 1 ? 'x' : ''}.` : 'Votre code de réduction est tout proche !'));
+  toast(`<b>Niveau ${l} !</b> Bonus : +${bonus} Ŧ<br>` + (S.code ? 'Continuez, la collection vous attend.' : left > 0 ? `Code de réduction dans ${left} niveau${left > 1 ? 'x' : ''}.` : 'Votre code de réduction est tout proche !'));
 }
 
 function checkReward() {
@@ -1087,6 +1089,7 @@ function buildBg() {
   gr.addColorStop(0, wall[0]); gr.addColorStop(0.6, wall[1]); gr.addColorStop(1, wall[2]);
   g.fillStyle = gr; g.fillRect(0, 0, W, Hh);
   g.setTransform(k, 0, 0, k, ox, oy);
+  if (X.wall) X.wall(g);
   // logo du salon au mur, bords fondus
   if (logoImg.complete && logoImg.naturalWidth) {
     const lw = 250, lh = lw * logoImg.naturalHeight / logoImg.naturalWidth, lx = CX - lw / 2, ly = -14;
@@ -1128,7 +1131,7 @@ const hands = [
 ];
 let snipA = 0, snipV = 0;
 
-const REACH = { scissors: 62, clipper: 58, comb: 62, none: 28, spray: 50, brush: 60 }; // distance main → pointe de l'outil
+const REACH = { scissors: 86, clipper: 58, comb: 62, none: 28, spray: 50, brush: 60 }; // distance main → pointe de l'outil
 function handTools(st) {
   if (st === 'shampoo' || st === 'massage') return ['none', 'none'];
   if (st === 'soin' || st === 'color') return ['none', 'brush'];
@@ -1150,15 +1153,34 @@ function drawHand(g, h, tool, soapy) {
 
   g.save(); g.translate(h.x, h.y); g.scale(-h.side, 1); g.rotate(-0.22);
   if (tool === 'scissors') {
+    // Ordre de dessin : paume, puis pouce et doigts, puis les ciseaux PAR-DESSUS (anneaux et lames toujours visibles).
+    let pg = g.createRadialGradient(-3, -4, 2, 0, 0, 20);
+    pg.addColorStop(0, sk[1]); pg.addColorStop(1, sk[0]);
+    g.fillStyle = pg; g.beginPath(); g.ellipse(0, 1, 16, 14, 0, 0, 7); g.fill();
+    g.strokeStyle = sk[2]; g.lineWidth = 1; g.stroke();
+    const PIV = 34, open = 0.1 + snipA * 0.3; // pivot des ciseaux, ouverture
+    const ring = (s) => { const a = s * open, x = -24, y = -s * 12; return [PIV + x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)]; };
+    for (const s of [-1, 1]) { // pouce et doigts glissés dans les anneaux
+      const [fx, fy] = ring(s);
+      g.strokeStyle = sk[2]; g.lineWidth = 10.5; g.beginPath(); g.moveTo(-6, -s * 4); g.lineTo(fx + 2, fy); g.stroke();
+      g.strokeStyle = sk[0]; g.lineWidth = 8.6; g.stroke();
+    }
     for (const s of [-1, 1]) {
-      g.save(); g.rotate(s * (0.07 + snipA * 0.3));
+      g.save(); g.translate(PIV, 0); g.rotate(s * open);
       const gr = g.createLinearGradient(0, -4, 0, 4);
       gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#9ea3ad');
-      g.fillStyle = gr; g.beginPath(); g.moveTo(4, -3 * s); g.lineTo(66, 0); g.lineTo(4, 3.5 * s); g.closePath(); g.fill();
-      g.strokeStyle = '#d9b85f'; g.lineWidth = 4.5; g.beginPath(); g.ellipse(-10, s * 9, 10, 7.5, 0, 0, 7); g.stroke();
+      g.fillStyle = gr; g.strokeStyle = '#6f747d'; g.lineWidth = 0.8;
+      g.beginPath(); g.moveTo(-6, -3.4 * s); g.lineTo(54, 0); g.lineTo(-6, 2.4 * s); g.closePath(); g.fill(); g.stroke();
+      g.strokeStyle = '#d9b85f'; g.lineWidth = 4.5;
+      g.beginPath(); g.moveTo(-4, 0); g.lineTo(-16, -s * 7); g.stroke();
+      g.beginPath(); g.ellipse(-24, -s * 12, 9, 7.5, -s * 0.5, 0, 7); g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(-24, -s * 12, 9, 7.5, -s * 0.5, 3.4, 4.6); g.stroke();
       g.restore();
     }
-    g.fillStyle = '#d9b85f'; g.beginPath(); g.arc(10, 0, 3, 0, 7); g.fill();
+    g.fillStyle = '#8a6d24'; g.beginPath(); g.arc(PIV, 0, 2.8, 0, 7); g.fill();
+    g.fillStyle = '#fff3c4'; g.beginPath(); g.arc(PIV - 0.8, -0.8, 1, 0, 7); g.fill();
+    g.restore();
+    return;
   } else if (tool === 'clipper') {
     const gr = g.createLinearGradient(0, -13, 0, 13);
     gr.addColorStop(0, '#45413c'); gr.addColorStop(1, '#141210');
@@ -1172,12 +1194,14 @@ function drawHand(g, h, tool, soapy) {
     g.fillStyle = '#d9b85f'; rr(g, 2, -9, 62, 8, 3); g.fill();
     for (let i = 0; i < 14; i++) g.fillRect(8 + i * 4, -2, 2, 13);
   } else if (tool === 'spray') { // flacon de lotion
+    g.save(); g.translate(16, 0); // décalé vers l'avant : le flacon reste visible devant la main
     const gr = g.createLinearGradient(0, -16, 0, 16);
     gr.addColorStop(0, '#f3dc98'); gr.addColorStop(1, '#9a7b2c');
     g.fillStyle = gr; rr(g, 4, -6, 26, 34, 7); g.fill();
     g.fillStyle = '#141210'; g.fillRect(11, -14, 12, 9); rr(g, 9, -24, 34, 11, 4); g.fill();
     g.fillStyle = '#f7f3ea'; g.fillRect(43, -21, 5, 5);
     g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(8, 0, 4, 22);
+    g.restore();
   } else if (tool === 'brush') { // pinceau de soin
     g.fillStyle = '#6b3f26'; rr(g, 2, -4, 40, 8, 4); g.fill();
     g.fillStyle = '#d9b85f'; g.fillRect(40, -6, 7, 12);
@@ -1188,6 +1212,7 @@ function drawHand(g, h, tool, soapy) {
   let gr = g.createRadialGradient(-3, -4, 2, 0, 0, 20);
   gr.addColorStop(0, sk[1]); gr.addColorStop(1, sk[0]);
   g.fillStyle = gr; g.beginPath(); g.ellipse(0, 1, 16, 14, 0, 0, 7); g.fill();
+  g.strokeStyle = sk[2]; g.lineWidth = 1; g.stroke();
   g.fillStyle = sk[0];
   for (let i = 0; i < 4; i++) {
     const wig = tool === 'none' ? Math.sin(time * 14 + i) * 3 : 0;
@@ -1500,6 +1525,7 @@ function tapAt(vx, vy) {
 }
 
 stage.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('#rdv, #info')) return; // liens vers le salon : ce ne sont pas des clics de jeu
   e.preventDefault();
   if (e.target.closest('#offer')) { sellOffer(); return; }
   if (phase === 'mini') { if (X.miniTap) X.miniTap(toV(e), e); return; }
@@ -1575,7 +1601,7 @@ async function showBoard() {
   if ($('modal').hidden) return;
   if (!d || !d.top) { modal('<h3>Classement</h3><p>Classement indisponible pour le moment. Vérifiez votre connexion et réessayez.</p>'); return; }
   const medal = ['🥇', '🥈', '🥉'];
-  const row = (e) => `<tr class="${e.me ? 'me' : ''}${e.r <= 4 ? ' win' : ''}"><td>${medal[e.r - 1] || e.r}</td><td>${esc(e.n)}<small>${e.t ? esc(e.t) + ' · ' : ''}niv. ${e.l}</small></td><td>${fmt(e.s)} €</td></tr>`;
+  const row = (e) => `<tr class="${e.me ? 'me' : ''}${e.r <= 4 ? ' win' : ''}"><td>${medal[e.r - 1] || e.r}</td><td>${esc(e.n)}<small>${e.t ? esc(e.t) + ' · ' : ''}niv. ${e.l}</small></td><td>${fmt(e.s)} Ŧ</td></tr>`;
   let h = '<h3>Classement</h3>' + (X.contest ? X.contest() : '') + `<p class="muted">Gains cumulés · ${d.count} joueur${d.count > 1 ? 's' : ''}</p><div class="board"><table>` + d.top.slice(0, 20).map(row).join('') + '</table></div>';
   if (d.me && d.me.r > 20) h += `<table class="board-me">${row({ ...d.me, me: true })}</table>`;
   h += `<p class="muted">Vous jouez sous le pseudo <b>${esc(S.name)}</b>. <button class="link inline" id="rename">Changer</button> · <button class="link inline" id="share">Partager mon score</button></p>`;
@@ -1615,7 +1641,7 @@ function renderStats() {
     const m = S.mis[i]; if (!m) return;
     const p = misProg(m), pc = el.querySelector('.pct');
     el.style.setProperty('--p', p / m.n);
-    el.querySelector('small').textContent = `${p}/${m.n} · récompense ${fmt(misReward())} €`;
+    el.querySelector('small').textContent = `${p}/${m.n} · récompense ${fmt(misReward())} Ŧ`;
     if (pc) pc.textContent = Math.floor(p / m.n * 100) + ' %';
   });
   $('money').textContent = fmt(S.money);
@@ -1624,7 +1650,7 @@ function renderStats() {
   $('lvl-n').textContent = 'Niv. ' + li.l;
   $('xp').style.width = (li.x / li.need * 100) + '%';
   panel.querySelectorAll('.buy').forEach((b) => {
-    const cost = +b.dataset.cost, can = S.money >= cost, it = b.closest('.item');
+    const cost = +b.dataset.cost, can = S.money >= cost, it = b.closest('.item') || b;
     b.disabled = !can; it.classList.toggle('can', can);
     if (cost) it.style.setProperty('--p', Math.min(1, S.money / cost)); // jauge : ce qu'il manque pour acheter
   });
@@ -1633,6 +1659,7 @@ function renderStats() {
   tabBtn.biz.classList.toggle('dot', SEATS[S.seats] !== undefined && S.money >= SEATS[S.seats]);
   tabBtn.menu.classList.toggle('dot', SERVICES.some((s) => !S.svc.includes(s.id) && S.money >= s.cost));
   renderGift();
+  if (X.stats) X.stats();
 }
 
 function renderOrder() {
@@ -1658,7 +1685,7 @@ function renderSeats() {
 function seatPop(i, pay) {
   const el = seatPops[i];
   if (!el) return;
-  el.textContent = `+${fmt(pay)} €`;
+  el.textContent = `+${fmt(pay)} Ŧ`;
   el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
 }
 
@@ -1685,28 +1712,28 @@ function renderPanel() {
   if (tab === 'tools') {
     h += '<h2>Défis</h2>' + S.mis.map((m, i) => {
       const p = misProg(m), ok = p >= m.n;
-      return `<div class="item mis ${ok ? 'can' : ''}" style="--p:${p / m.n}"><div class="grow"><strong>${MISSIONS[m.m].t(m.n)}</strong><small>${p}/${m.n} · récompense ${fmt(misReward())} €</small></div>` +
+      return `<div class="item mis ${ok ? 'can' : ''}" style="--p:${p / m.n}"><div class="grow"><strong>${MISSIONS[m.m].t(m.n)}</strong><small>${p}/${m.n} · récompense ${fmt(misReward())} Ŧ</small></div>` +
         (ok ? `<button class="buy" data-mis="${i}" data-cost="0">Encaisser</button>` : `<span class="pct">${Math.floor(p / m.n * 100)} %</span>`) + '</div>';
     }).join('') + '<h2>Améliorations</h2>';
     h += `<p class="muted">Puissance : ${power()} par clic · Auto : ${autoRate()}/s · Tarifs : x${mult().toFixed(2).replace('.', ',')}</p>`;
     for (const t of TOOLS) {
       const max = t.max && lvl(t.id) >= t.max, cost = toolCost(t);
       h += `<div class="item"><div class="grow"><strong>${t.n}</strong><small>${t.d} · niveau ${lvl(t.id)}</small></div>` +
-        (max ? '<span class="tag">MAX</span>' : `<button class="buy" data-tool="${t.id}" data-cost="${cost}">${fmt(cost)} €</button>`) + '</div>';
+        (max ? '<span class="tag">MAX</span>' : `<button class="buy" data-tool="${t.id}" data-cost="${cost}">${fmt(cost)} Ŧ</button>`) + '</div>';
     }
   } else if (tab === 'biz') {
     const tn = tierNow(), nx = TIERS[tn + 1];
     h += `<h2>Univers : ${TIERS[tn].n}</h2><p>${TIERS[tn].d}</p>`;
-    if (nx) h += `<p class="muted">Prochain univers : <b>${nx.n}</b> à ${fmt(tierAt(tn + 1))} € de gains dans ce salon (vous : ${fmt(runTotal())} €).</p>` +
+    if (nx) h += `<p class="muted">Prochain univers : <b>${nx.n}</b> à ${fmt(tierAt(tn + 1))} Ŧ de gains dans ce salon (vous : ${fmt(runTotal())} Ŧ).</p>` +
       `<div class="bar big"><i style="width:${Math.min(100, (runTotal() - tierAt(tn)) / (tierAt(tn + 1) - tierAt(tn)) * 100)}%"></i></div>`;
     h += '<div class="tiers">' + TIERS.map((t, i) => `<span class="${i <= tn ? 'on' : ''}">${i <= tn ? t.n : '?'}<small>x${String(t.m).replace('.', ',')}</small></span>`).join('') + '</div>';
     h += `<h2>Fauteuils ${S.seats + 1}/${SEATS.length + 1}</h2>` +
       '<div class="item owned"><div class="grow"><strong>Fauteuil 1</strong><small>Le vôtre : c\'est ici que vous cliquez.</small></div><span class="tag">Vous</span></div>';
     for (let i = 0; i < S.seats; i++) h += X.seatRow ? X.seatRow(i) : '';
-    if (S.seats < SEATS.length) h += `<div class="item"><div class="grow"><strong>Ouvrir le fauteuil ${S.seats + 2}</strong><small>Un coiffeur de plus : il encaisse tout seul, sans clic.</small></div><button class="buy" data-seat="1" data-cost="${SEATS[S.seats]}">${fmt(SEATS[S.seats])} €</button></div>`;
-    h += `<h2>Ventes de produits</h2><p class="muted">${S.salesN} vente${S.salesN > 1 ? 's' : ''} · ${fmt(S.salesSum)} € · ${Math.round(offerChance() * 100)} % de chances par client. Quand un client hésite, touchez la bulle avant qu'elle disparaisse.</p>`;
+    if (S.seats < SEATS.length) h += `<div class="item"><div class="grow"><strong>Ouvrir le fauteuil ${S.seats + 2}</strong><small>Un coiffeur de plus : il encaisse tout seul, sans clic.</small></div><button class="buy" data-seat="1" data-cost="${SEATS[S.seats]}">${fmt(SEATS[S.seats])} Ŧ</button></div>`;
+    h += `<h2>Ventes de produits</h2><p class="muted">${S.salesN} vente${S.salesN > 1 ? 's' : ''} · ${fmt(S.salesSum)} Ŧ · ${Math.round(offerChance() * 100)} % de chances par client. Quand un client hésite, touchez la bulle avant qu'elle disparaisse.</p>`;
     h += S.sales.length
-      ? '<table>' + S.sales.map((s) => `<tr><td>${new Date(s.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${s.n}<small class="who">client n° ${s.c}</small></td><td>+${s.p} €</td></tr>`).join('') + '</table>'
+      ? '<table>' + S.sales.map((s) => `<tr><td>${new Date(s.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${s.n}<small class="who">client n° ${s.c}</small></td><td>+${s.p} Ŧ</td></tr>`).join('') + '</table>'
       : '<p class="muted">Aucune vente pour l\'instant.</p>';
     h += '<p class="muted">Produits, prix des produits et univers sont propres au jeu.</p>';
   } else if (tab === 'menu') {
@@ -1715,7 +1742,7 @@ function renderPanel() {
       const own = S.svc.includes(s.id);
       h += `<div class="item ${own ? 'owned' : ''}"><div class="grow"><strong>${s.n}</strong>` +
         `<small class="real">Au salon : ${fmtPrice(s)}${s.note ? ' · ' + s.note : ''}</small></div>` +
-        (own ? '<span class="tag">Acquis</span>' : `<button class="buy" data-svc="${s.id}" data-cost="${s.cost}">${fmt(s.cost)} €</button>`) + '</div>';
+        (own ? '<span class="tag">Acquis</span>' : `<button class="buy" data-svc="${s.id}" data-cost="${s.cost}">${fmt(s.cost)} Ŧ</button>`) + '</div>';
     }
   } else if (tab === 'cuts') {
     const info = selCut >= 0
@@ -1747,7 +1774,7 @@ function renderPanel() {
       '<h2>Réalisations</h2><div class="gallery">' + SALON.photos.map((p, i) => `<img src="${p}" alt="Réalisation ${i + 1} du salon" loading="lazy">`).join('') + '</div>' +
       '<h2>Horaires</h2><table>' + SALON.hours.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('') + '</table>' +
       '<h2>Tarifs</h2><table>' + SERVICES.map((s) => `<tr><td>${s.n}</td><td>${s.price} €</td></tr>`).join('') + '</table>' +
-      `<p class="muted">Clients coiffés : ${S.served} · Gains cumulés : ${fmt(S.total)} € · Temps de jeu : ${Math.floor(S.playSec / 60)} min</p>` +
+      `<p class="muted">Clients coiffés : ${S.served} · Gains cumulés : ${fmt(S.total)} Ŧ · Temps de jeu : ${Math.floor(S.playSec / 60)} min</p>` +
       `<p class="muted">SIRET : ${SALON.siret}<br>Tarifs, horaires et photos : fiche Planity du salon, 12/11/2026.</p>` +
       '<button class="link" id="verify">Vérifier un code (réservé au salon)</button>' +
       '<button class="link" id="reset">Recommencer la partie</button>';
@@ -1785,7 +1812,7 @@ panel.addEventListener('click', (e) => {
     const r = misReward();
     earn(r); S.mis.splice(i, 1); S.mis.push(newMission());
     sfx('level'); cash(16, CX, 240);
-    toast(`<b>Défi réussi !</b><br>+${fmt(r)} € · un nouveau défi vous attend.`);
+    toast(`<b>Défi réussi !</b><br>+${fmt(r)} Ŧ · un nouveau défi vous attend.`);
     checkTier();
   } else if (b.dataset.star) {
     selStar = +b.dataset.star;

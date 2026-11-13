@@ -31,7 +31,7 @@ const TROPHIES = [
   { id: 's10', n: 'Apprenti', d: 'Coiffer 10 clients', ok: () => S.served >= 10 },
   { id: 'v10', n: 'Bon vendeur', d: 'Vendre 10 produits', ok: () => S.salesN >= 10 },
   { id: 'p10', n: 'Main sûre', d: 'Réussir 10 coups parfaits', ok: () => st('perfect') >= 10 },
-  { id: 't10k', n: 'Premier pactole', d: 'Encaisser 10 000 €', ok: () => S.total >= 1e4 },
+  { id: 't10k', n: 'Premier pactole', d: 'Encaisser 10 000 Ŧ', ok: () => S.total >= 1e4 },
   { id: 'd3', n: 'Fidèle', d: 'Jouer 3 jours de suite', ok: () => S.streak >= 3 },
   { id: 's100', n: 'Coiffeur confirmé', d: 'Coiffer 100 clients', ok: () => S.served >= 100 },
   { id: 'tb10', n: 'Pile électrique', d: 'Déclencher 10 Turbo', ok: () => st('turbo') >= 10 },
@@ -100,8 +100,8 @@ X.seatDone = (i) => { // Inès vend parfois un produit
 };
 X.seatRow = (i) => {
   const s = STAFF[i], l = staffLvl(i), pay = Math.round(seatPay() * X.seatMult(i)), per = (seatPeriod() * X.seatSpeed(i)).toFixed(1).replace('.', ',');
-  return `<div class="item owned"><div class="grow"><strong>${s.n} · ${s.sp}</strong><small>${s.d} · +${fmt(pay)} € toutes les ${per} s · formation ${l}/${STAFF_MAX}</small></div>` +
-    (l >= STAFF_MAX ? '<span class="tag">MAX</span>' : `<button class="buy" data-staff="${i}" data-cost="${staffCost(i)}">Former · ${fmt(staffCost(i))} €</button>`) + '</div>';
+  return `<div class="item owned"><div class="grow"><strong>${s.n} · ${s.sp}</strong><small>${s.d} · +${fmt(pay)} Ŧ toutes les ${per} s · formation ${l}/${STAFF_MAX}</small></div>` +
+    (l >= STAFF_MAX ? '<span class="tag">MAX</span>' : `<button class="buy" data-staff="${i}" data-cost="${staffCost(i)}">Former · ${fmt(staffCost(i))} Ŧ</button>`) + '</div>';
 };
 
 /* =====================================================================
@@ -130,7 +130,7 @@ function endEvent(win) {
   if (!win) { toast(`<b>${e.k === 'wed' ? 'Le cortège est reparti' : 'Le live est terminé'}</b><br>Trop tard pour cette fois. La prochaine sera la bonne.`); return; }
   const r = unit() * (e.k === 'wed' ? 3 : 5);
   earn(r); bump('events'); cash(26, CX, 220); sfx('level');
-  toast(e.k === 'wed' ? `<b>Vive les mariés !</b><br>Bouquet final : +${fmt(r)} €` : `<b>Vidéo virale !</b><br>Pourboire géant : +${fmt(r)} €`);
+  toast(e.k === 'wed' ? `<b>Vive les mariés !</b><br>Bouquet final : +${fmt(r)} Ŧ` : `<b>Vidéo virale !</b><br>Pourboire géant : +${fmt(r)} Ŧ`);
   renderStats(); checkTier();
 }
 X.onFinish = (c) => {
@@ -337,7 +337,7 @@ X.contest = () => {
   return `<div class="contest"><b>Concours</b> · ${when}<ul>${CONTEST.prizes.map((p) => `<li>${p}</li>`).join('')}</ul><small>Le classement compte les gains cumulés. Lots à retirer au salon.</small></div>`;
 };
 X.share = async () => {
-  const text = `J'ai encaissé ${fmt(S.total)} € au jeu ${SALON.name}. Tu fais mieux ?`, url = location.origin + '/';
+  const text = `J'ai gagné ${fmt(S.total)} Tracy coins au jeu ${SALON.name}. Tu fais mieux ?`, url = location.origin + '/';
   try {
     if (navigator.share) await navigator.share({ title: SALON.name, text, url });
     else { await navigator.clipboard.writeText(text + ' ' + url); toast('<b>Copié !</b><br>Collez le message où vous voulez.'); }
@@ -355,7 +355,7 @@ function checkDay() {
   const y = new Date(); y.setDate(y.getDate() - 1);
   const streak = S.day === dayStr(y) ? S.streak + 1 : 1, r = unit() * 2 * Math.min(streak, 7);
   S.day = t; S.streak = streak; save(); // noté tout de suite : le bonus ne peut pas être pris deux fois
-  later(() => modal(`<h3>Bonus du jour</h3><p>${streak > 1 ? `<b>${streak} jours de suite !</b> ` : ''}Tracy vous offre <b>${fmt(r)} €</b> pour bien démarrer.</p>` +
+  later(() => modal(`<h3>Bonus du jour</h3><p>${streak > 1 ? `<b>${streak} jours de suite !</b> ` : ''}Tracy vous offre <b>${fmt(r)} Ŧ</b> pour bien démarrer.</p>` +
     `<p class="muted">Revenez demain : le bonus grossit chaque jour, jusqu'au 7e. Et la roue du jour vous attend dans l'onglet Outils.</p>`, () => {
     earn(r); cash(18, CX, 240); sfx('level'); renderStats(); checkTier(); save(); if (tab === 'tools') renderPanel();
   }, 'Encaisser'));
@@ -378,7 +378,7 @@ function showWheel() {
     setTimeout(() => {
       const [label, , type, v] = WHEEL[pick];
       let msg = label;
-      if (type === 'cash') { const r = unit() * v; earn(r); cash(v >= 50 ? 40 : 16, CX, 240); msg = `${label} : +${fmt(r)} €`; }
+      if (type === 'cash') { const r = unit() * v; earn(r); cash(v >= 50 ? 40 : 16, CX, 240); msg = `${label} : +${fmt(r)} Ŧ`; }
       else if (type === 'turbo') { fever = v; msg = 'Turbo pendant 30 secondes : gains x2 !'; }
       else if (type === 'boost') { boost = v; msg = 'Tous vos encaissements x2 pendant 2 minutes !'; }
       else { starNext = true; msg = 'Une personnalité sera votre prochain client !'; }
@@ -409,7 +409,7 @@ function checkOffline() {
   if (r < 1) return;
   const h = Math.floor(away / 3600), m = Math.floor(away % 3600 / 60);
   earn(r); S.last = Date.now(); save();
-  later(() => { modal(`<h3>Pendant votre absence…</h3><p>Vous êtes parti ${h ? h + ' h ' : ''}${m} min. Votre équipe a continué à coiffer : <b>+${fmt(r)} €</b>.</p>` +
+  later(() => { modal(`<h3>Pendant votre absence…</h3><p>Vous êtes parti ${h ? h + ' h ' : ''}${m} min. Votre équipe a continué à coiffer : <b>+${fmt(r)} Ŧ</b>.</p>` +
     `<p class="muted">L'équipe tourne à moitié régime sans vous, pendant 4 heures au plus. Formez-la dans « Mon salon » pour gagner plus.</p>`); cash(20, CX, 240); sfx('cash'); renderStats(); checkTier(); });
 }
 function askPrestige() {
@@ -653,16 +653,16 @@ X.panel = (t, h) => {
       : `<p class="muted">Atteignez l'univers <b>${TIERS[TIERS.length - 1].n}</b> pour ouvrir un salon à ${next} (tarifs x${presMult(S.pres + 1)}).</p>`;
     let deco = `<h2>Décoration ${S.deco.length}/${DECO.length}</h2><p class="muted">Chaque objet apparaît dans le salon et ajoute +3 % à vos tarifs. La décoration vous suit de ville en ville.</p>`;
     for (const d of DECO) deco += `<div class="item ${has(d.id) ? 'owned' : ''}"><div class="grow"><strong>${d.n}</strong><small>+3 % sur les tarifs</small></div>` +
-      (has(d.id) ? '<span class="tag">Installé</span>' : `<button class="buy" data-deco="${d.id}" data-cost="${d.cost}">${fmt(d.cost)} €</button>`) + '</div>';
+      (has(d.id) ? '<span class="tag">Installé</span>' : `<button class="buy" data-deco="${d.id}" data-cost="${d.cost}">${fmt(d.cost)} Ŧ</button>`) + '</div>';
     const bar = '<h2>Bar à couleurs</h2>' + (S.colbar
       ? `<div class="item owned"><div class="grow"><strong>Coloration</strong><small>Certains clients demandent une teinte : une étape de plus, paiement x1,5 · ${S.dyes.length}/${DYES.length} teintes trouvées</small></div><span class="tag">Ouvert</span></div>`
-      : `<div class="item"><div class="grow"><strong>Ouvrir le bar à couleurs</strong><small>Des clients demanderont une coloration : paiement x1,5 et des teintes à collectionner. Propre au jeu.</small></div><button class="buy" data-colbar="1" data-cost="${COLBAR_COST}">${fmt(COLBAR_COST)} €</button></div>`);
+      : `<div class="item"><div class="grow"><strong>Ouvrir le bar à couleurs</strong><small>Des clients demanderont une coloration : paiement x1,5 et des teintes à collectionner. Propre au jeu.</small></div><button class="buy" data-colbar="1" data-cost="${COLBAR_COST}">${fmt(COLBAR_COST)} Ŧ</button></div>`);
     return top + h.replace('<h2>Ventes de produits</h2>', bar + deco + '<h2>Ventes de produits</h2>');
   }
   if (t === 'cuts') {
     const title = X.title();
     return `<h2>Trophées ${S.troph.length}/${TROPHIES.length}</h2><p class="muted">${title ? `Votre titre : <b>${title}</b>. ` : ''}Chaque trophée ajoute +1 % à vos tarifs.</p><div class="trophies">` +
-      TROPHIES.map((x) => `<div class="${S.troph.includes(x.id) ? 'on' : ''}"><b>${x.n}</b><small>${x.d}</small></div>`).join('') + '</div>' + h +
+      TROPHIES.map((x) => `<div class="${S.troph.includes(x.id) ? 'on' : ''}" data-tip="${esc(`<b>${x.n}</b>${x.d}<br>+1 % sur vos tarifs`)}">🏆</div>`).join('') + '</div>' + h +
       `<h2>Teintes ${S.dyes.length}/${DYES.length}</h2><p class="muted">${S.colbar ? 'Chaque teinte trouvée ajoute +1 % à vos tarifs. De nouvelles teintes arrivent avec chaque univers.' : 'Ouvrez le bar à couleurs dans « Mon salon » pour proposer des colorations.'}</p><div class="dyes">` +
       DYES.map((x, i) => (S.dyes.includes(i) ? `<span><i style="background:linear-gradient(135deg,${HAIRS[x[1]][1]},${HAIRS[x[1]][0]} 55%,${HAIRS[x[1]][2]})"></i>${x[0]}</span>` : '<span class="off"><i></i>???</span>')).join('') + '</div>';
   }
@@ -695,6 +695,239 @@ X.click = (b) => {
 };
 
 /* =====================================================================
+   9 ter. V8 : panneaux en icônes + infobulles, rendez-vous Planity, coordonnées, décor enrichi
+   ===================================================================== */
+const TOOL_IC = { ciseaux: '✂️', apprenti: '🧑‍🎓', lotion: '🧴', tondeuse: '🪒', bouche: '📣', hold: '👆', presentoir: '🛍️', formation: '🎓' };
+const SVC_IC = { simple: '✂️', express: '⚡', enfant: '👦', militaire: '🪖', ado: '🧑', americaine: '🗽', barbe: '🧔', pere: '👨‍👦', massage: '💆', visage: '🧖', coupebarbe: '💈', complete: '👑' };
+const MIS_IC = { served: '💇', taps: '👆', crits: '⭐', sales: '🛍️', turbo: '⚡', stars: '🌟' };
+const DECO_IC = { plant: '🪴', frames: '🖼️', carpet: '🟥', vip: '💡', checker: '🏁', cup: '🏆' };
+const STAFF_IC = ['👨‍🦱', '👩', '🧔', '👩‍🎨'];
+const STEP_IC = { shampoo: '🧼', cut: '✂️', beard: '🧔', massage: '💆', soin: '🧖', finish: '💈', color: '🎨' };
+const coin = (n) => `<i class="tc">T</i>${fmt(n)}`;
+// Une tuile : grande icône, pastille (niveau), pied (prix ou état). L'explication est dans l'infobulle (appui long).
+function tile(o) {
+  return `<button type="button" class="ic ${o.cls || ''}" ${o.attrs || ''} data-tip="${esc(o.tip || '')}"><span class="em">${o.ic}</span>` +
+    (o.badge !== undefined && o.badge !== '' ? `<span class="lv">${o.badge}</span>` : '') + `<span class="ft">${o.foot || ''}</span></button>`;
+}
+const HINT = '<p class="hintline">👆 Restez appuyé sur une icône pour voir à quoi elle sert</p>';
+const RDV_BTN = () => `<a class="rdvbtn" href="${SALON.planity}" target="_blank" rel="noopener">📅 Prendre rendez-vous</a>`;
+
+const panelV7 = X.panel;
+X.panel = (t, h) => {
+  if (t === 'tools') {
+    const can = S.spin !== today();
+    let o = HINT + '<div class="icg">' + tile(can
+      ? { cls: 'buy', attrs: 'id="wheel" data-cost="0"', ic: '🎡', foot: '🎁', tip: `<b>Roue du jour</b>Un lancer gratuit par jour : pièces, Turbo, visite d'une personnalité…<br>Série en cours : ${S.streak} jour${S.streak > 1 ? 's' : ''}.` }
+      : { cls: 'done', ic: '🎡', foot: '⏳', tip: '<b>Roue du jour</b>Déjà lancée aujourd\'hui. Revenez demain !' });
+    S.mis.forEach((m, i) => {
+      const M = MISSIONS[m.m], p = misProg(m), tip = `<b>Défi : ${M.t(m.n)}</b>Récompense : ${fmt(misReward())} ${COIN}`;
+      o += p >= m.n
+        ? tile({ cls: 'buy mq', attrs: `data-mis="${i}" data-cost="0"`, ic: MIS_IC[M.k], badge: '✓', foot: '🎁', tip })
+        : tile({ cls: 'mq', attrs: `data-mq="${i}" style="--p:${p / m.n}"`, ic: MIS_IC[M.k], foot: `${p}/${m.n}`, tip });
+    });
+    o += `</div><p class="statline">✂️ ${power()} · 🧑‍🎓 ${autoRate()}/s · <i class="tc">T</i> x${mult().toFixed(2).replace('.', ',')}` + (boost > 0 ? ` · ⏱️ x2 ${Math.ceil(boost)} s` : '') + '</p><div class="icg">';
+    for (const tl of TOOLS) {
+      const l = lvl(tl.id), max = tl.max && l >= tl.max, tip = `<b>${tl.n}</b>${tl.d}<br>Niveau ${l}${max ? ' (maximum)' : ''}`;
+      o += max ? tile({ cls: 'done', ic: TOOL_IC[tl.id], badge: l, foot: 'MAX', tip })
+        : tile({ cls: 'buy', attrs: `data-tool="${tl.id}" data-cost="${toolCost(tl)}"`, ic: TOOL_IC[tl.id], badge: l || '', foot: coin(toolCost(tl)), tip });
+    }
+    return o + '</div>';
+  }
+  if (t === 'menu') {
+    let o = HINT + '<div class="icg">';
+    for (const s of SERVICES) {
+      const own = S.svc.includes(s.id), tip = `<b>${s.n}</b>Au salon : ${fmtPrice(s)}${s.note ? ' · ' + s.note : ''}<br>${own ? 'Débloquée : vos clients la demandent.' : 'À débloquer pour que vos clients la demandent.'}`;
+      o += own ? tile({ cls: 'done', ic: SVC_IC[s.id], foot: `${s.price} €`, tip })
+        : tile({ cls: 'buy', attrs: `data-svc="${s.id}" data-cost="${s.cost}"`, ic: SVC_IC[s.id], badge: '🔒', foot: coin(s.cost), tip });
+    }
+    return o + '</div><p class="statline">La vraie carte du salon : les prix en € sont ceux de Tracy.</p>' + RDV_BTN();
+  }
+  if (t === 'biz') {
+    const tn = tierNow(), nx = TIERS[tn + 1], next = CITIES[S.pres + 1], ready = tn >= TIERS.length - 1;
+    let o = `<p class="statline big">🏙️ <b>${CITIES[S.pres]}</b> · ${TIERS[tn].n} · <i class="tc">T</i> x${X.mult().toFixed(2).replace('.', ',')}</p>`;
+    if (nx) o += `<div class="bar big"><i style="width:${Math.min(100, (runTotal() - tierAt(tn)) / (tierAt(tn + 1) - tierAt(tn)) * 100)}%"></i></div>`;
+    o += '<div class="tiers">' + TIERS.map((x, i) => `<span class="${i <= tn ? 'on' : ''}" data-tip="${esc(i <= tn ? `<b>${x.n}</b>${x.d}` : `<b>Univers à découvrir</b>À ${fmt(tierAt(i))} ${COIN} de gains dans ce salon.`)}">${i <= tn ? x.n : '?'}<small>x${String(x.m).replace('.', ',')}</small></span>`).join('') + '</div>';
+    o += HINT + '<div class="icg">';
+    if (next) o += ready
+      ? tile({ cls: 'buy', attrs: 'id="pres" data-cost="0"', ic: '🏙️', badge: '+', foot: next, tip: `<b>Ouvrir un salon à ${next}</b>Vous repartez de zéro, avec des tarifs x${presMult(S.pres + 1)} pour toujours.` })
+      : tile({ cls: 'done off', ic: '🏙️', badge: '🔒', foot: next, tip: `<b>Salon de ${next}</b>Atteignez l'univers ${TIERS[TIERS.length - 1].n} pour l'ouvrir (tarifs x${presMult(S.pres + 1)}).` });
+    o += tile({ cls: 'done', ic: '💺', foot: 'Vous', tip: '<b>Fauteuil 1</b>Le vôtre : c\'est ici que vous coiffez.' });
+    for (let i = 0; i < S.seats; i++) {
+      const s = STAFF[i], l = staffLvl(i), pay = Math.round(seatPay() * X.seatMult(i)), per = (seatPeriod() * X.seatSpeed(i)).toFixed(1).replace('.', ',');
+      const tip = `<b>${s.n} · ${s.sp}</b>${s.d}<br>+${fmt(pay)} ${COIN} toutes les ${per} s, sans clic.<br>Formation ${l}/${STAFF_MAX} (+25 % par niveau).`;
+      o += l >= STAFF_MAX ? tile({ cls: 'done', ic: STAFF_IC[i], badge: l, foot: 'MAX', tip })
+        : tile({ cls: 'buy', attrs: `data-staff="${i}" data-cost="${staffCost(i)}"`, ic: STAFF_IC[i], badge: l || '', foot: coin(staffCost(i)), tip });
+    }
+    if (S.seats < SEATS.length) o += tile({ cls: 'buy', attrs: `data-seat="1" data-cost="${SEATS[S.seats]}"`, ic: '💺', badge: '+', foot: coin(SEATS[S.seats]), tip: `<b>Ouvrir un fauteuil</b>${STAFF[S.seats].n} rejoint l'équipe et encaisse tout seul, sans clic.` });
+    o += S.colbar ? tile({ cls: 'done', ic: '🎨', foot: `${S.dyes.length}/${DYES.length}`, tip: '<b>Bar à couleurs</b>Certains clients demandent une coloration : paiement x1,5. Teintes à retrouver dans l\'album.' })
+      : tile({ cls: 'buy', attrs: `data-colbar="1" data-cost="${COLBAR_COST}"`, ic: '🎨', badge: '🔒', foot: coin(COLBAR_COST), tip: '<b>Bar à couleurs</b>Des clients demanderont une coloration : paiement x1,5 et 12 teintes à collectionner.' });
+    for (const d of DECO) o += has(d.id) ? tile({ cls: 'done', ic: DECO_IC[d.id], foot: '✓', tip: `<b>${d.n}</b>Installé : +3 % sur vos tarifs.` })
+      : tile({ cls: 'buy', attrs: `data-deco="${d.id}" data-cost="${d.cost}"`, ic: DECO_IC[d.id], foot: coin(d.cost), tip: `<b>${d.n}</b>Décore le salon et ajoute +3 % à vos tarifs. Vous suit de ville en ville.` });
+    o += `</div><p class="statline">🛍️ ${S.salesN} vente${S.salesN > 1 ? 's' : ''} · <i class="tc">T</i>${fmt(S.salesSum)} · ${Math.round(offerChance() * 100)} % de chances par client</p>`;
+    if (S.sales.length) o += '<table>' + S.sales.slice(0, 12).map((s) => `<tr><td>${new Date(s.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${s.n}</td><td>+${s.p} ${COIN}</td></tr>`).join('') + '</table>';
+    return o;
+  }
+  h = panelV7(t, h);
+  if (t === 'salon') h = RDV_BTN() + h;
+  return h;
+};
+X.stats = () => { // progression des défis, sans reconstruire le panneau
+  if (tab !== 'tools') return;
+  panel.querySelectorAll('[data-mq]').forEach((el) => {
+    const m = S.mis[+el.dataset.mq]; if (!m) return;
+    const p = misProg(m);
+    el.style.setProperty('--p', p / m.n); el.querySelector('.ft').textContent = `${p}/${m.n}`;
+  });
+};
+
+/* ---------- Infobulles : appui long (tactile) ou survol (souris) ---------- */
+const tipEl = document.createElement('div');
+tipEl.id = 'tip'; tipEl.hidden = true; document.body.appendChild(tipEl);
+let tipTimer = 0, tipKill = false, tipHide = 0, tipXY = null;
+function showTip(el) {
+  if (!el.dataset.tip) return;
+  tipEl.innerHTML = el.dataset.tip; tipEl.hidden = false; clearTimeout(tipHide);
+  const r = el.getBoundingClientRect(), w = tipEl.offsetWidth, hh = tipEl.offsetHeight;
+  tipEl.style.left = clamp(r.left + r.width / 2 - w / 2, 6, window.innerWidth - w - 6) + 'px';
+  tipEl.style.top = (r.top - hh - 10 > 4 ? r.top - hh - 10 : r.bottom + 10) + 'px';
+}
+const hideTip = () => { tipEl.hidden = true; };
+document.addEventListener('pointerdown', (e) => {
+  clearTimeout(tipTimer); tipKill = false; hideTip();
+  const el = e.target.closest('[data-tip]');
+  if (!el || e.pointerType === 'mouse') return;
+  tipXY = [e.clientX, e.clientY];
+  tipTimer = setTimeout(() => { showTip(el); tipKill = true; if (navigator.vibrate) { try { navigator.vibrate(12); } catch { /* rien */ } } }, 380);
+}, true);
+document.addEventListener('pointermove', (e) => { if (tipXY && Math.hypot(e.clientX - tipXY[0], e.clientY - tipXY[1]) > 12) clearTimeout(tipTimer); }, true);
+for (const evn of ['pointerup', 'pointercancel']) document.addEventListener(evn, () => { clearTimeout(tipTimer); tipXY = null; if (!tipEl.hidden) tipHide = setTimeout(hideTip, 2200); }, true);
+document.addEventListener('click', (e) => { if (tipKill) { tipKill = false; e.stopPropagation(); e.preventDefault(); } }, true); // l'appui long n'achète pas
+document.addEventListener('contextmenu', (e) => { if (e.target.closest('[data-tip]')) e.preventDefault(); });
+document.addEventListener('pointerover', (e) => { if (e.pointerType !== 'mouse') return; const el = e.target.closest('[data-tip]'); if (el) showTip(el); else hideTip(); });
+
+/* ---------- Étapes en icônes sur la barre, cadeau raccourci ---------- */
+const orderV7 = renderOrder;
+renderOrder = function () { // eslint-disable-line no-func-assign
+  orderV7();
+  $('ticks').innerHTML += steps.map((s) => `<em style="left:${((s.from + s.to) * 50).toFixed(1)}%">${STEP_IC[s.k] || ''}</em>`).join('');
+};
+const giftV7 = renderGift;
+renderGift = function () { // eslint-disable-line no-func-assign
+  giftV7();
+  const l = levelInfo().l;
+  if (!S.code && l < REWARD.level) $('gift').textContent = `🎁 ${REWARD.label} au salon · niveau ${l}/${REWARD.level}`;
+};
+
+/* ---------- Rendez-vous : bulle après chaque client, fenêtre à chaque niveau ---------- */
+const rdvEl = document.createElement('div');
+rdvEl.id = 'rdv'; rdvEl.hidden = true; stage.appendChild(rdvEl);
+let rdvT = 0, burst = 0;
+function showRdv(c) {
+  if (S.noRdv || S.tuto < 9 || simT !== null) return;
+  const s = svcOf(c.svc);
+  rdvEl.innerHTML = `<a class="go" href="${SALON.planity}" target="_blank" rel="noopener"><span>📅</span><b>Prendre rendez-vous</b><small>${s.n} · ${s.price} € au salon</small></a>` +
+    '<button type="button" class="x" aria-label="Fermer">✕</button><button type="button" class="never">Ne plus afficher</button>';
+  rdvEl.hidden = false; clearTimeout(rdvT); rdvT = setTimeout(() => { rdvEl.hidden = true; }, 6000);
+}
+rdvEl.addEventListener('click', (e) => {
+  if (e.target.closest('.never')) { S.noRdv = 1; save(); rdvEl.hidden = true; toast('<b>Rappels désactivés</b><br>Le bouton de rendez-vous reste dans les onglets Carte et Infos.'); }
+  else if (e.target.closest('.x')) rdvEl.hidden = true;
+});
+X.levelUp = (l, bonus) => {
+  if (S.noRdv || simT !== null) return;
+  const rec = (S.recent || []).slice(0, 3);
+  later(() => {
+    modal(`<h3>Niveau ${l} !</h3><p>Bonus : <b>+${fmt(bonus)} ${COIN}</b></p>` +
+      (rec.length ? '<div class="lvcuts">' + rec.map((i) => `<figure><canvas data-pc="${i}"></canvas><figcaption>${CUTS[i].n}</figcaption></figure>`).join('') + '</div>' : '') +
+      '<p class="lvq">Envie de la même coupe, en vrai ?</p>' +
+      `<div class="lvreal">${SALON.photos.slice(0, 3).map((p, i) => `<img src="${p}" alt="Réalisation ${i + 1} du salon" loading="lazy">`).join('')}</div>` +
+      `<a class="rdvbtn big" href="${SALON.planity}" target="_blank" rel="noopener">📅 Prendre rendez-vous sur Planity</a>` +
+      `<p class="muted"><a href="tel:${SALON.phone.replace(/ /g, '')}">📞 ${SALON.phone}</a> · 📍 ${SALON.address}</p>` +
+      '<label class="lvnever"><input type="checkbox" id="lv-never"> Ne plus afficher</label>', () => {
+      if ($('lv-never') && $('lv-never').checked) { S.noRdv = 1; save(); }
+    }, 'Continuer à jouer');
+    $('modal-body').querySelectorAll('canvas[data-pc]').forEach((cv2) => portrait(cv2, +cv2.dataset.pc));
+  });
+};
+
+/* ---------- Coordonnées du salon, toujours visibles en haut de la scène ---------- */
+const infoEl = document.createElement('div');
+infoEl.id = 'info';
+infoEl.innerHTML = `<a href="tel:${SALON.phone.replace(/ /g, '')}">📞 ${SALON.phone}</a><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SALON.name + ' ' + SALON.address)}" target="_blank" rel="noopener">📍 ${SALON.address.replace(', 64000', ',')}</a>`;
+stage.appendChild(infoEl);
+
+/* ---------- Décor enrichi : briques, lambris, grand miroir éclairé ---------- */
+X.wall = (g) => {
+  g.strokeStyle = 'rgba(0,0,0,.13)'; g.lineWidth = 1; g.beginPath();
+  for (let r = 0; r < 24; r++) { const y = -60 + r * 16; g.moveTo(-400, y); g.lineTo(760, y); for (let x = -400 + (r & 1) * 19; x < 760; x += 38) { g.moveTo(x, y); g.lineTo(x, y + 16); } }
+  g.stroke();
+  g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(-400, 322, 1160, 90); // lambris
+  g.strokeStyle = 'rgba(255,255,255,.06)'; g.lineWidth = 1.5;
+  for (let x = -400; x < 760; x += 58) { rr(g, x + 5, 331, 48, 70, 3); g.stroke(); }
+  g.fillStyle = 'rgba(217,184,95,.55)'; g.fillRect(-400, 320, 1160, 2.5);
+  // miroir en arche derrière le fauteuil
+  const arch = () => { g.beginPath(); g.moveTo(CX - 98, 408); g.lineTo(CX - 98, 222); g.arc(CX, 222, 98, Math.PI, 0); g.lineTo(CX + 98, 408); g.closePath(); };
+  const gr = g.createLinearGradient(CX - 98, 120, CX + 98, 408);
+  gr.addColorStop(0, 'rgba(210,228,240,.22)'); gr.addColorStop(0.5, 'rgba(210,228,240,.07)'); gr.addColorStop(1, 'rgba(210,228,240,.16)');
+  arch(); g.fillStyle = gr; g.fill();
+  g.save(); arch(); g.clip(); g.fillStyle = 'rgba(255,255,255,.07)';
+  for (const x of [-70, -30]) { g.beginPath(); g.moveTo(CX + x, 110); g.lineTo(CX + x + 22, 110); g.lineTo(CX + x - 70, 420); g.lineTo(CX + x - 92, 420); g.closePath(); g.fill(); }
+  g.restore();
+  arch(); g.strokeStyle = '#b8963f'; g.lineWidth = 6; g.stroke(); g.strokeStyle = 'rgba(255,240,190,.5)'; g.lineWidth = 1.2; g.stroke();
+  for (let i = 0; i <= 10; i++) { // ampoules de loge
+    const a = Math.PI + i * Math.PI / 10, x = CX + Math.cos(a) * 108, y = 222 + Math.sin(a) * 108;
+    const b = g.createRadialGradient(x, y, 0.5, x, y, 11); b.addColorStop(0, 'rgba(255,240,190,.75)'); b.addColorStop(1, 'rgba(255,240,190,0)');
+    g.fillStyle = b; g.fillRect(x - 11, y - 11, 22, 22); g.fillStyle = '#fff6d8'; g.beginPath(); g.arc(x, y, 2.6, 0, 7); g.fill();
+  }
+};
+
+/* ---------- Effets : vignette, éclat d'encaissement, confettis ; visages plus détaillés ---------- */
+const drawV7 = X.draw, frontV7 = X.front, finV7 = X.onFinish, frameV7 = X.frame;
+const CONF = ['#ff5e62', '#ffd36b', '#7fc79a', '#7fe0ff', '#c58bff', '#ffffff'];
+X.draw = (g) => {
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const W = cv.width, H = cv.height, v = g.createRadialGradient(W / 2, H * 0.52, H * 0.3, W / 2, H * 0.52, H * 0.9);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.42)');
+  g.fillStyle = v; g.fillRect(0, 0, W, H);
+  g.setTransform(k, 0, 0, k, ox, oy);
+  if (burst > 0) { // onde dorée à l'encaissement
+    const r = (1 - burst) * 190;
+    g.strokeStyle = `rgba(255,214,110,${burst * 0.8})`; g.lineWidth = 10 * burst + 1; g.beginPath(); g.arc(CX, 270, r, 0, 7); g.stroke();
+    g.strokeStyle = `rgba(255,255,255,${burst * 0.5})`; g.lineWidth = 2; g.beginPath(); g.arc(CX, 270, r * 0.72, 0, 7); g.stroke();
+  }
+  drawV7(g);
+};
+X.frame = (dt) => {
+  frameV7(dt);
+  if (burst > 0) burst = Math.max(0, burst - dt * 1.8);
+  if ((mini || ev) && !rdvEl.hidden) rdvEl.hidden = true; // ne gêne ni les gestes ni les événements
+};
+X.onFinish = (c, pay) => {
+  finV7(c, pay);
+  if (svcOf(c.svc).cut) { S.recent = [c.cut, ...(S.recent || []).filter((i) => i !== c.cut)].slice(0, 4); }
+  if (simT !== null) return;
+  burst = 1;
+  for (let i = 0; i < 22 && parts.length < 190; i++) parts.push({ kind: 'bit', x: CX + rnd(120) - 60, y: 230 + rnd(40), a: Math.random() * 6, vx: (Math.random() - 0.5) * 420, vy: -260 - Math.random() * 260, va: (Math.random() - 0.5) * 16, life: 1.1 + Math.random() * 0.5, col: CONF[rnd(CONF.length)] });
+  showRdv(c);
+};
+X.front = (g, c) => {
+  if (c.star === undefined) { // petits détails propres à chaque client
+    const sd = c.seed, sk = SKINS[c.skin];
+    g.fillStyle = 'rgba(255,255,255,.22)'; g.beginPath(); g.ellipse(CX + 4, 268, 2.6, 4, 0.3, 0, 7); g.fill(); // reflet du nez
+    for (const sx of [-1, 1]) { g.fillStyle = 'rgba(255,255,255,.1)'; g.beginPath(); g.ellipse(CX + sx * 38, 268, 9, 5, sx * 0.4, 0, 7); g.fill(); }
+    if (sd % 4 === 0) { g.fillStyle = 'rgba(120,70,40,.5)'; for (const sx of [-1, 1]) for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(CX + sx * (28 + (i * 7) % 17), 266 + (i * 5) % 11, 1.1, 0, 7); g.fill(); } }
+    if (sd % 5 === 2) { g.fillStyle = sk[2]; g.beginPath(); g.arc(CX + 21, 291, 1.7, 0, 7); g.fill(); }
+    if (sd % 3 === 0) { g.fillStyle = '#e8cc7c'; g.beginPath(); g.arc(CX - 64, 268, 2.6, 0, 7); g.fill(); }
+    if (sd % 6 === 1) { // lunettes rondes
+      g.strokeStyle = '#2a2826'; g.lineWidth = 2;
+      for (const sx of [-1, 1]) { g.beginPath(); g.arc(CX + sx * 24, 250, 13.5, 0, 7); g.stroke(); g.fillStyle = 'rgba(255,255,255,.1)'; g.fill(); }
+      g.beginPath(); g.moveTo(CX - 10.5, 249); g.quadraticCurveTo(CX, 245, CX + 10.5, 249); g.moveTo(CX - 37.5, 248); g.lineTo(CX - 58, 245); g.moveTo(CX + 37.5, 248); g.lineTo(CX + 58, 245); g.stroke();
+    }
+  }
+  frontV7(g, c);
+};
+
+/* =====================================================================
    10. DÉMARRAGE
    ===================================================================== */
 buildBg(); renderSeats(); renderPanel();
@@ -702,7 +935,7 @@ checkOffline();
 if (!S.seen6) {
   S.seen6 = 1;
   later(() => modal('<h3>Bienvenue au salon</h3>' + X.contest() +
-    '<p>Coiffez, encaissez, faites grandir votre salon et grimpez dans le classement 🏆.</p>' +
+    '<p>Coiffez, gagnez des <b>Tracy coins</b> <i class="tc">T</i>, faites grandir votre salon et grimpez dans le classement 🏆.</p>' +
     '<p class="muted">Nouveau : bonus et roue du jour, événements surprises, coup parfait, équipe à former, décoration, trophées, salons à ouvrir dans d\'autres villes, nouveaux gestes, coloration et personnalités rares à collectionner.</p>', null, 'Jouer'));
 }
 checkDay();

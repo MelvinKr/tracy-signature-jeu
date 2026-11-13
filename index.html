@@ -12,14 +12,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <div id="app">
     <header id="hud">
       <img id="logo" src="img/logo.jpg" alt="Signature Cut by Tracy">
       <div class="hud-right">
-        <div class="chip money"><span class="coin">€</span><b id="money">0</b></div>
+        <div class="chip money"><span class="coin">T</span><b id="money">0</b></div>
         <div class="chip level"><b id="lvl-n">Niv. 1</b><span class="xp"><i id="xp"></i></span></div>
         <button id="rank" type="button" aria-label="Classement" title="Classement">🏆</button>
         <button id="snd" type="button" aria-label="Activer ou couper le son"></button>
@@ -48,11 +48,11 @@
 
     <section id="side">
       <nav id="tabs">
-        <button data-tab="tools" class="on">Outils</button>
-        <button data-tab="biz">Mon salon</button>
-        <button data-tab="menu">Carte</button>
-        <button data-tab="cuts">Album</button>
-        <button data-tab="salon">Infos</button>
+        <button data-tab="tools" class="on"><span>✂️</span>Outils</button>
+        <button data-tab="biz"><span>🏠</span>Salon</button>
+        <button data-tab="menu"><span>📋</span>Carte</button>
+        <button data-tab="cuts"><span>📖</span>Album</button>
+        <button data-tab="salon"><span>📍</span>Infos</button>
       </nav>
       <div id="panel"></div>
     </section>
@@ -64,7 +64,7 @@
       </div>
     </div>
   </div>
-  <script src="app.js?v=9"></script>
-  <script src="plus.js?v=9"></script>
+  <script src="app.js?v=10"></script>
+  <script src="plus.js?v=10"></script>
 </body>
 </html>

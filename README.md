@@ -4,7 +4,7 @@ Clicker pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en tou
 on débloque les prestations du salon, on fait grandir son salon et on gagne un code de réduction.
 Pensé pour téléphone en portrait, adapté aux tablettes et aux ordinateurs.
 
-## État : V7
+## État : V8
 
 Site statique (HTML, CSS, JS), sans serveur. Le personnage, les coupes et le décor sont dessinés en vectoriel
 sur un canvas (`app.js`), nets sur tous les écrans. La partie est sauvegardée sur l'appareil (`localStorage`).
@@ -76,6 +76,20 @@ Nouveautés de la V7 (`plus.js`) :
   Pour voir le thème hors saison : ajouter `?noel=1` à l'adresse.
 - **Premiers pas** : cinq bulles guident les nouveaux joueurs (toucher, encaisser, acheter, carte, classement).
 
+Nouveautés de la V8 :
+
+- **Moins de texte** : les onglets Outils, Salon et Carte sont des grilles d'icônes (prix en pièces, pastille de
+  niveau, jauge). L'explication de chaque icône apparaît dans une infobulle : appui long sur téléphone, survol à la
+  souris. Les étapes de la prestation sont des icônes sur la barre de progression.
+- **Monnaie** : le jeu compte en **Tracy coins** (symbole Ŧ, pièce marquée T). Les euros ne servent plus qu'aux vrais
+  prix du salon (carte, tarifs, bulle de rendez-vous).
+- **Rendez-vous** : après chaque client, une bulle « Prendre rendez-vous » (lien Planity, prestation et prix réel)
+  s'affiche 6 secondes sans bloquer le jeu ; à chaque niveau, une fenêtre montre les dernières coupes réalisées, des
+  réalisations du salon et un gros bouton Planity. « Ne plus afficher » coupe les deux définitivement (`S.noRdv`).
+- **Coordonnées** : téléphone et adresse en permanence en haut de la scène (liens appel et plan).
+- **Mains et ciseaux** : les ciseaux sont dessinés par-dessus la main (anneaux, pouce et doigts visibles).
+- **Décor et effets** : mur de briques, lambris, grand miroir éclairé, vignette, onde dorée et confettis à
+  l'encaissement, détails de visage (taches de rousseur, lunettes, grain de beauté, boucle d'oreille).
 Mesure par simulation (10 clics par seconde, achats immédiats) : premier salon terminé en 10 min environ, le
 deuxième en 9 min, le troisième en 19 min, puis de plus en plus long. Non vérifié avec de vrais joueurs.
 

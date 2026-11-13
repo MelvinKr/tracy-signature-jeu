@@ -4,7 +4,7 @@ Clicker pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en tou
 on débloque les prestations du salon, on fait grandir son salon et on gagne un code de réduction.
 Pensé pour téléphone en portrait, adapté aux tablettes et aux ordinateurs.
 
-## État : V6
+## État : V7
 
 Site statique (HTML, CSS, JS), sans serveur. Le personnage, les coupes et le décor sont dessinés en vectoriel
 sur un canvas (`app.js`), nets sur tous les écrans. La partie est sauvegardée sur l'appareil (`localStorage`).
@@ -61,6 +61,20 @@ Nouveautés de la V6 (fichier `plus.js`, branché sur `app.js` par l'objet `X`) 
 - **Partage** du score, **installation** sur l'écran d'accueil (`manifest.webmanifest`, `sw.js`).
 - **Classement** : le serveur refuse les scores impossibles pour le temps de jeu (plafond = 20 fois la courbe d'un
   joueur simulé à 10 clics par seconde). Cela écarte les faux scores grossiers, pas un tricheur appliqué.
+
+Nouveautés de la V7 (`plus.js`) :
+
+- **Trois gestes** : rasage au tracé (glisser le doigt sur une ligne, x1,6), la bonne coupe (reconnaître la coupe
+  demandée parmi trois, x1,5), client difficile (toucher 8 cibles pendant qu'il gigote, x3).
+- **Coloration** : un « bar à couleurs » à ouvrir dans Mon salon ; certains clients demandent alors une teinte
+  (étape en plus, paiement x1,5). 12 teintes à collectionner dans l'album. Propre au jeu : ce n'est pas une
+  prestation de la carte du salon.
+- **Personnalités** : 28 au total, avec quatre raretés (Rare x4, Épique x8, Légendaire x20, Mythique x50) et des
+  effets animés pour les plus rares (cadran qui tourne, peau étoilée, cheveux de flammes, or massif). Toujours des
+  archétypes originaux ou du folklore, aucune personne réelle ni personnage protégé.
+- **Noël** : du 1er décembre au 5 janvier, neige, guirlande, bonnets rouges et une personnalité de saison.
+  Pour voir le thème hors saison : ajouter `?noel=1` à l'adresse.
+- **Premiers pas** : cinq bulles guident les nouveaux joueurs (toucher, encaisser, acheter, carte, classement).
 
 Mesure par simulation (10 clics par seconde, achats immédiats) : premier salon terminé en 10 min environ, le
 deuxième en 9 min, le troisième en 19 min, puis de plus en plus long. Non vérifié avec de vrais joueurs.

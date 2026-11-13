@@ -1,4 +1,4 @@
-/* Signature Cut by Tracy – le jeu (clicker) · V6 (nouveautés V6 dans plus.js)
+/* Signature Cut by Tracy – le jeu (clicker) · V7 (nouveautés V6 et V7 dans plus.js)
    Rendu vectoriel lisse sur canvas, net sur tous les écrans. Tout est local (localStorage).
    V3 : univers de clientèle, activités (shampoing, massage, soin, lotion), décor animé, musique,
    vente de produits avec historique, fauteuils d'équipe.
@@ -89,14 +89,34 @@ const STARS = [
   { n: 'Le Champion', d: 'Médaille d\'or autour du cou, il sort du podium.', at: 2, look: 4, col: '#1d3f8f', acc: ['medal'] },
   { n: 'Le Chef étoilé', d: 'Trois étoiles et pas un cheveu dans la soupe.', at: 2, look: 1, col: '#f4f4f0', acc: ['stache'] },
   { n: 'Le Rockeur', d: 'Cuir, lunettes noires et larsen.', at: 2, look: 6, acc: ['shades', 'tattoo'] },
-  { n: 'MC Diamant', d: 'Rappeur : il ne sourit que pour montrer ses diamants.', at: 3, look: 4, jw: 5, grillz: true, hair: 0, acc: ['shades'] },
-  { n: 'La Popstar', d: 'Cheveux roses, paillettes et refrain entêtant.', at: 3, look: 5, jw: 4, hair: 6, acc: ['starcheek'] },
+  { r: 1, n: 'MC Diamant', d: 'Rappeur : il ne sourit que pour montrer ses diamants.', at: 3, look: 4, jw: 5, grillz: true, hair: 0, acc: ['shades'] },
+  { r: 1, n: 'La Popstar', d: 'Cheveux roses, paillettes et refrain entêtant.', at: 3, look: 5, jw: 4, hair: 6, acc: ['starcheek'] },
   { n: 'DJ Néon', d: 'Il mixe jusqu\'au lever du soleil, lunettes fluo sur le nez.', at: 3, look: 3, acc: ['headphones', 'neon'] },
-  { n: 'El Tornado', d: 'Catcheur masqué : personne n\'a jamais vu son visage.', at: 3, look: 0, col: '#c8372f', acc: ['mask'] },
-  { n: 'Baron Pépite', d: 'Vieux magnat : monocle, moustache blanche et coffre-fort bien rempli.', at: 4, look: 2, col: '#5a2148', hair: 5, jw: 3, acc: ['monocle', 'stache'] },
-  { n: 'Unité IA-26', d: 'Un robot qui veut une coupe « plus humaine ».', at: 4, look: 4, col: '#39424e', skin: 4, hair: 8, acc: ['visor', 'antenna'] },
+  { r: 1, n: 'El Tornado', d: 'Catcheur masqué : personne n\'a jamais vu son visage.', at: 3, look: 0, col: '#c8372f', acc: ['mask'] },
+  { r: 1, n: 'Baron Pépite', d: 'Vieux magnat : monocle, moustache blanche et coffre-fort bien rempli.', at: 4, look: 2, col: '#5a2148', hair: 5, jw: 3, acc: ['monocle', 'stache'] },
+  { r: 2, n: 'Unité IA-26', d: 'Un robot qui veut une coupe « plus humaine ».', at: 4, look: 4, col: '#39424e', skin: 4, hair: 8, acc: ['visor', 'antenna'] },
+  // V7 : r = rareté (0 Rare, 1 Épique, 2 Légendaire, 3 Mythique). Les accessoires et effets sont dessinés dans plus.js.
+  { n: 'Le Clown', d: 'Nez rouge et grand sourire : il fait rire tout le salon.', at: 1, look: 5, col: '#f2c230', hair: 4, acc: ['clown'] },
+  { r: 1, n: 'Le Comte Minuit', d: 'Il ne prend rendez-vous qu\'après le coucher du soleil.', at: 2, look: 2, col: '#3a0d18', skin: 5, hair: 0, acc: ['fangs', 'collar'] },
+  { r: 1, n: 'Le Mime', d: 'Il a demandé sa coupe sans dire un mot.', at: 2, look: 0, col: '#f2f0ec', skin: 11, hair: 0, acc: ['mime'] },
+  { r: 1, n: 'Capitaine Cosmos', d: 'De retour d\'orbite, casque encore vissé sur la tête.', at: 3, look: 4, col: '#e8e8ee', acc: ['bubble'] },
+  { r: 1, n: 'La Sirène du Gave', d: 'Elle a remonté le Gave de Pau pour un brushing.', at: 2, look: 5, col: '#1f8f8a', hair: 13, jw: 3, acc: ['scales', 'shell'] },
+  { r: 2, n: 'Zblorg le Touriste', d: 'Venu de très loin : sur sa planète, personne n\'a de cheveux.', at: 3, look: 3, col: '#9aa7b5', skin: 6, hair: 14, acc: ['alien'] },
+  { r: 2, n: 'Le Fantôme du salon', d: 'Il hante le fauteuil n° 1 depuis 1926.', at: 2, look: 1, col: '#dfeaf2', skin: 7, hair: 19, acc: ['ghost'] },
+  { r: 2, n: 'Ryū le Dragon', d: 'Cornes, écailles, et un peu de fumée quand il éternue.', at: 4, look: 4, col: '#2a2a2f', skin: 10, hair: 0, acc: ['horns', 'scales', 'smoke'] },
+  { r: 2, n: 'Sa Majesté', d: 'Sa couronne ne touche jamais ses cheveux.', at: 4, look: 2, col: '#4b1d7a', jw: 3, hair: 2, acc: ['crown', 'stache'] },
+  { r: 2, n: 'Le Père Noël incognito', d: 'En décembre seulement : il se fait tailler la barbe avant la tournée.', at: 0, look: 0, col: '#c8372f', hair: 19, noel: true, acc: ['santa'] },
+  { r: 3, n: 'Le Voyageur du temps', d: 'Il a pris rendez-vous demain pour hier.', at: 3, look: 6, hair: 19, acc: ['clock', 'monocle'] },
+  { r: 3, n: 'Nébula', d: 'Une galaxie entière sous la peau.', at: 4, look: 4, col: '#141a40', skin: 9, hair: 12, acc: ['galaxy'] },
+  { r: 3, n: 'Le Phénix', d: 'Ses cheveux repoussent en flammes à chaque coupe.', at: 4, look: 3, col: '#5a1a0a', skin: 2, hair: 16, acc: ['flames'] },
+  { r: 3, n: 'Le Client en or massif', d: 'Tout ce qu\'il touche se transforme en pourboire.', at: 5, look: 5, col: '#c9a23a', skin: 8, hair: 20, jw: 5, grillz: true, acc: ['gold'] },
 ];
-const STAR_PAY = 4; // une personnalité paie x4
+const STAR_PAY = 4; // une personnalité Rare paie x4
+// Raretés des personnalités : [nom, paiement, poids de tirage]
+const RAR = [['Rare', 4, 100], ['Épique', 8, 40], ['Légendaire', 20, 14], ['Mythique', 50, 5]];
+const rarOf = (s) => RAR[(s && s.r) || 0];
+// Teintes de coloration (propres au jeu) : h = palette dans HAIRS
+const DYES = [['Blond platine', 9], ['Cuivré', 10], ['Rouge cerise', 11], ['Violet', 12], ['Turquoise', 13], ['Vert menthe', 14], ['Bleu électrique', 15], ['Orange feu', 16], ['Lavande', 17], ['Rose pastel', 18], ['Argent', 19], ['Or 24 carats', 20]];
 // Défis : k = compteur suivi, n = objectifs possibles
 const MISSIONS = [
   { k: 'served', t: (n) => `Coiffer ${n} clients`, n: [5, 8, 12] },
@@ -107,7 +127,7 @@ const MISSIONS = [
   { k: 'stars', t: (n) => `Coiffer ${n} personnalité${n > 1 ? 's' : ''}`, n: [1, 2] },
 ];
 // Étapes d'une prestation : [nom, poids dans la durée]
-const STEPS = { shampoo: ['Shampoing', 2], cut: ['Coupe', 5], beard: ['Barbe', 3], massage: ['Massage crânien', 2.5], soin: ['Soin visage', 2.5], finish: ['Lotion & coiffage', 1.2] };
+const STEPS = { shampoo: ['Shampoing', 2], cut: ['Coupe', 5], beard: ['Barbe', 3], massage: ['Massage crânien', 2.5], soin: ['Soin visage', 2.5], finish: ['Lotion & coiffage', 1.2], color: ['Coloration', 2.5] };
 
 /* 30 coupes. t = forme du dessus, H = hauteur, sd = côtés (0 rasé … 3 plein),
    fade = [début, fin, opacité restante] du dégradé, hl = ligne du front, tex = texture. */
@@ -150,12 +170,18 @@ const SKINS = [
   ['#f1c9a5', '#fbe0c6', '#d49f78'], ['#e2b188', '#f2cba6', '#bf8a5e'],
   ['#b98253', '#d19c6c', '#925d37'], ['#7b4c2f', '#96623f', '#57331d'],
   ['#aab4bf', '#d5dde5', '#76808c'], // 4 : métal (robot), réservé aux personnalités
+  ['#e6e2ea', '#f6f4f8', '#b9b2c4'], ['#8fcf7a', '#b8eba3', '#5e9a4d'], ['#dfeaf2', '#f5fbff', '#aebfcc'], // 5 pâle, 6 vert, 7 spectre
+  ['#e8c45a', '#fff0a8', '#a8842a'], ['#27306b', '#4753a8', '#141a40'], ['#c44a3a', '#e8705c', '#8a2a20'], ['#f2f0ec', '#ffffff', '#c9c5bd'], // 8 or, 9 nuit, 10 écailles, 11 blanc
 ];
 const N_SKIN = 4, N_HAIR = 6; // les clients ordinaires piochent dans les premières teintes
 const HAIRS = [
   ['#26201f', '#5a4c4a', '#0f0c0c'], ['#4b2f20', '#7d5236', '#2a180f'], ['#7c5230', '#a97a4c', '#52341b'],
   ['#d6ae56', '#f4d98f', '#a07a2c'], ['#b3552d', '#dd8250', '#7c3516'], ['#a3a3aa', '#d6d6dc', '#6d6d75'],
   ['#e85fa0', '#ff9cc8', '#a8376d'], ['#3f7fd6', '#7fb2f5', '#234f8f'], ['#5f6b78', '#9aa7b5', '#39424e'], // rose, bleu, acier
+  // 9 à 20 : teintes de coloration (voir DYES)
+  ['#efe6c8', '#fffbe8', '#bfb48c'], ['#c46a2e', '#e89255', '#8a4317'], ['#c21f3a', '#ee5a6f', '#7d0f22'], ['#7a3fc4', '#a878ec', '#4c2284'],
+  ['#1fb5ad', '#6fe3dc', '#0f7a75'], ['#58c98a', '#9aedbd', '#2f8a57'], ['#2a6cf0', '#73a2ff', '#173f9a'], ['#f07a1a', '#ffab5c', '#a84c08'],
+  ['#b9a3e8', '#dfd2fb', '#8068b8'], ['#f4a6c6', '#ffd3e4', '#c06c90'], ['#c9ced6', '#f0f3f7', '#8b929c'], ['#e8c45a', '#fff0a8', '#a8842a'],
 ];
 const EYES = ['#5b3a21', '#3d6b8c', '#4d7a4a', '#2e2a26'];
 
@@ -175,7 +201,7 @@ const FACTS = [
    2. ÉTAT ET SAUVEGARDE
    ===================================================================== */
 const KEY = 'tsj-v2';
-const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0, stars: [], stat: {}, mis: [], name: '', pid: '', base: 0, pres: 0, staff: [], deco: [], troph: [], day: '', streak: 0, spin: '', last: 0 });
+const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0, stars: [], stat: {}, mis: [], name: '', pid: '', dyes: [], colbar: 0, tuto: 0, base: 0, pres: 0, staff: [], deco: [], troph: [], day: '', streak: 0, spin: '', last: 0 });
 let S = fresh();
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch { /* stockage indisponible */ }
 const save = () => { if (simT !== null) return; S.last = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
@@ -253,6 +279,7 @@ function stepsOf(c) {
   if (s.cut && c.wash) ks.push('shampoo');
   if (s.cut) ks.push('cut');
   if (c.b0 === 3) ks.push('beard');
+  if (c.dye !== undefined) ks.push('color');
   if (s.massage) ks.push('massage');
   if (s.soin) ks.push('soin');
   ks.push('finish');
@@ -340,12 +367,13 @@ function newClient() {
   const stubble = svc.kid ? 0 : rnd(2);
   const tn = tierNow(); // la plupart des clients viennent de l'univers atteint, quelques habitués restent
   let star = -1; // de temps en temps, une personnalité pousse la porte (de préférence une nouvelle)
-  if (S.served >= 3 && ((X.forceStar && X.forceStar()) || Math.random() < 0.06)) {
+  if (S.served >= 3 && ((X.forceStar && X.forceStar()) || Math.random() < 0.08)) {
     const pool = [];
-    STARS.forEach((s, i) => { if (s.at <= tn) pool.push(i); });
-    const unseen = pool.filter((i) => !S.stars.includes(i));
-    const from = unseen.length && Math.random() < 0.7 ? unseen : pool;
-    if (from.length) star = from[rnd(from.length)];
+    STARS.forEach((s, i) => { if (s.at <= tn && (!s.noel || X.noel)) pool.push(i); });
+    let tot = 0; // tirage pondéré par la rareté ; une personnalité pas encore vue compte double
+    const w = pool.map((i) => { const x = rarOf(STARS[i])[2] * (S.stars.includes(i) ? 1 : 2); tot += x; return x; });
+    let roll = Math.random() * tot;
+    for (let j = 0; j < pool.length; j++) { roll -= w[j]; if (roll < 0) { star = pool[j]; break; } }
   }
   const tier = star < 0 && tn && Math.random() < 0.3 ? rnd(tn) : tn;
   const sd = star >= 0 ? STARS[star] : {};
@@ -356,6 +384,7 @@ function newClient() {
     b0: hasBeard ? 3 : stubble, b1: hasBeard ? svc.beard : stubble,
     need: Math.round((20 + svc.min) * TIER_WORK[tier]), vip: Math.random() < 0.05 * lvl('bouche'),
   };
+  if (X.newClient) X.newClient(S.client, svc);
   S.work = 0;
   setupClient();
 }
@@ -372,7 +401,7 @@ function setupClient() {
 function finishClient(tip) {
   const c = S.client, svc = svcOf(c.svc);
   const isStar = c.star !== undefined && STARS[c.star];
-  const pay = Math.round(svc.price * mult() * TIERS[c.tier || 0].m * (c.vip ? 3 : 1) * (isStar ? STAR_PAY : 1) * (tip || 1) * (X.payMult ? X.payMult() : 1));
+  const pay = Math.round(svc.price * mult() * TIERS[c.tier || 0].m * (c.vip ? 3 : 1) * (isStar ? rarOf(isStar)[1] : 1) * (tip || 1) * (X.payMult ? X.payMult() : 1));
   const before = levelInfo().l;
   earn(pay); S.served++; S.xp += c.xp || c.need;
   bump('served');
@@ -772,6 +801,7 @@ function drawJewels(g, c) {
 function drawAcc(g, c, under) {
   const s = c.star !== undefined && STARS[c.star];
   if (!s) return;
+  if (X.acc) X.acc(g, c, s, under);
   const has = (a) => s.acc.includes(a), hp = HAIRS[c.hair];
   g.lineCap = 'round'; g.lineJoin = 'round';
   if (under) {
@@ -1101,7 +1131,7 @@ let snipA = 0, snipV = 0;
 const REACH = { scissors: 62, clipper: 58, comb: 62, none: 28, spray: 50, brush: 60 }; // distance main → pointe de l'outil
 function handTools(st) {
   if (st === 'shampoo' || st === 'massage') return ['none', 'none'];
-  if (st === 'soin') return ['none', 'brush'];
+  if (st === 'soin' || st === 'color') return ['none', 'brush'];
   if (st === 'finish') return ['comb', 'spray'];
   if (st === 'beard') return ['comb', 'clipper'];
   const cut = CUTS[S.client.cut];
@@ -1221,7 +1251,7 @@ function frame(dt) {
     if (seatBars[i]) seatBars[i].style.width = (seatT[i] * 100) + '%';
   }
   if (X.frame) X.frame(dt);
-  if (hold && lvl('hold') && phase !== 'perfect') { // clic maintenu
+  if (hold && lvl('hold') && phase !== 'mini') { // clic maintenu
     holdAcc += dt * 2 * lvl('hold');
     while (holdAcc >= 1) { holdAcc--; tapAt(hold.x + rnd(14) - 7, hold.y + rnd(14) - 7); }
   }
@@ -1237,7 +1267,7 @@ function frame(dt) {
     addWork(autoRate() * dt);
   }
   if (phase === 'done') { phaseT -= dt; if (phaseT <= 0) { newClient(); phase = 'in'; slide = 1; } }
-  else if (phase === 'in') { slide -= dt * 4.5; if (slide <= 0) { slide = 0; phase = 'cut'; } }
+  else if (phase === 'in') { slide -= dt * 4.5; if (slide <= 0) { slide = 0; phase = 'cut'; if (X.arrive) X.arrive(S.client); } }
   if (now - lastTap > 800 && combo) { combo = Math.max(0, combo - dt * 30); renderCombo(); }
   blinkT -= dt; if (blinkT < -0.13) blinkT = 2 + Math.random() * 3;
   shake = Math.max(0, shake - dt * 4);
@@ -1272,9 +1302,12 @@ function draw() {
   g.drawImage(bg, 0, 0);
   g.setTransform(k, 0, 0, k, ox, oy);
   drawBgLive(g);
-  const sx = Math.sin(time * 70) * shake * 5 * k, ease = slide * slide;
+  if (X.live) X.live(g);
+  const sx = Math.sin(time * 70) * shake * 5 * k + (X.dx ? X.dx() * k : 0), ease = slide * slide;
   g.setTransform(k, 0, 0, k, ox + ease * cv.width + sx, oy);
+  if (X.back) X.back(g, c);
   if (layer.width) g.drawImage(layer, 0, 0, V.w, V.h);
+  if (X.over) X.over(g, c);
   const done = phase !== 'cut', st = stepAt();
   if (capeA > 0.02) { g.globalAlpha = Math.min(1, capeA); drawCape(g, c); g.globalAlpha = 1; }
   drawJewels(g, c);
@@ -1285,6 +1318,7 @@ function draw() {
   drawAcc(g, c, false);
   for (const t of tufts) if (!t.gone) drawTuft(g, t, pal);
   if (st.k === 'shampoo' && !done) drawFoam(g, st.q);
+  if (X.front) X.front(g, c);
 
   g.setTransform(k, 0, 0, k, ox, oy);
   const tl = handTools(st.k);
@@ -1454,6 +1488,7 @@ function tapAt(vx, vy) {
     if (st === 'shampoo') { for (let i = 0; i < 3; i++) puff('bub', tx + rnd(30) - 15, ty + rnd(20) - 10); sfx('bub'); }
     else if (st === 'massage') { puff('heart', tx + rnd(20) - 10, ty - 10); sfx('soft'); }
     else if (st === 'soin') { spark(tx, ty); sfx('soft'); }
+    else if (st === 'color') { for (let i = 0; i < 3; i++) { spark(tx + rnd(36) - 18, ty + rnd(24) - 12); parts[parts.length - 1].col = HAIRS[S.client.dye][rnd(2)]; } sfx('bub'); }
     else if (st === 'finish') { for (let i = 0; i < 4; i++) puff('mist', tx + rnd(40) - 20, ty + rnd(30) - 15); sfx('spray'); }
     else { bits(tx, ty, HAIRS[S.client.hair]); sfx(tl[1] === 'clipper' ? 'buzz' : 'snip'); }
     floatText(crit ? 'Coup de maître !' : '+' + (gain < 10 ? gain.toFixed(1).replace('.', ',') : fmt(gain)), vx + rnd(30) - 15, vy - 22, crit ? 'crit' : '');
@@ -1467,13 +1502,13 @@ function tapAt(vx, vy) {
 stage.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   if (e.target.closest('#offer')) { sellOffer(); return; }
-  if (phase === 'perfect') { if (X.perfectTap) X.perfectTap(); return; }
+  if (phase === 'mini') { if (X.miniTap) X.miniTap(toV(e), e); return; }
   hold = toV(e); holdAcc = 0;
   tapAt(hold.x, hold.y);
 });
 // Clic maintenu : tant que le doigt reste posé, l'outil « Clic maintenu » clique tout seul
 const toV = (e) => { const r = cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) * dpr - ox) / k, y: ((e.clientY - r.top) * dpr - oy) / k }; };
-stage.addEventListener('pointermove', (e) => { if (hold) hold = toV(e); });
+stage.addEventListener('pointermove', (e) => { if (hold) hold = toV(e); if (phase === 'mini' && X.miniMove) X.miniMove(toV(e)); });
 for (const ev of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(ev, () => { hold = null; });
 stage.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -1604,9 +1639,9 @@ function renderOrder() {
   const c = S.client, svc = svcOf(c.svc);
   const st = stepAt();
   const sd = c.star !== undefined && STARS[c.star];
-  $('order-svc').textContent = `${sd ? '★ ' + sd.n : 'Client ' + TIERS[c.tier || 0].n} · ${svc.n}`;
+  $('order-svc').textContent = `${sd ? '★ ' + rarOf(sd)[0] + ' · ' + sd.n : 'Client ' + TIERS[c.tier || 0].n} · ${svc.n}`;
   $('order').classList.toggle('star', !!sd);
-  $('order-price').textContent = (sd ? `x${STAR_PAY} · ` : c.vip ? 'x3 · ' : '') + fmtPrice(svc);
+  $('order-price').textContent = (sd ? `x${rarOf(sd)[1]} · ` : c.vip ? 'x3 · ' : '') + fmtPrice(svc);
   $('order-cut').textContent = `Étape ${st.i + 1}/${steps.length} : ${STEPS[st.k][0]}` + (svc.cut ? ` · ${CUTS[c.cut].n}` : '');
   $('ticks').innerHTML = steps.slice(1).map((s) => `<span style="left:${(s.from * 100).toFixed(1)}%"></span>`).join('');
 }
@@ -1631,16 +1666,18 @@ function portrait(canvas, cutIdx, si) {
   const kk = 2, g = canvas.getContext('2d'), s = STARS[si];
   canvas.width = 170 * kk; canvas.height = 200 * kk;
   g.setTransform(kk, 0, 0, kk, -95 * kk, -112 * kk);
+  const tm = time; if (s) time = si * 1.7; // pose figée pour l'album
   const c = s
     ? { star: si, cut: (si * 7 + 4) % CUTS.length, skin: s.skin !== undefined ? s.skin : si % N_SKIN, hair: s.hair !== undefined ? s.hair : si % N_HAIR, eye: si % EYES.length, seed: si + 50, b1: 0, tier: s.at, look: s.look, col: s.col, jw: s.jw || 0, grillz: !!s.grillz, fit: si % 4 }
     : { cut: cutIdx, skin: cutIdx % N_SKIN, hair: cutIdx % N_HAIR, eye: cutIdx % EYES.length, seed: cutIdx + 5, b1: 0, cape: true };
+  if (s && X.back) X.back(g, c);
   drawCharacter(g, c, kk, false);
   g.setTransform(kk, 0, 0, kk, -95 * kk, -112 * kk);
   const ex = eyeDx, ey = eyeDy; eyeDx = 0; eyeDy = 0;
   if (s) { drawJewels(g, c); drawAcc(g, c, true); }
   drawFaceLive(g, c, s ? 'happy' : 'neutral', false);
-  if (s) drawAcc(g, c, false);
-  eyeDx = ex; eyeDy = ey;
+  if (s) { drawAcc(g, c, false); if (X.front) X.front(g, c); }
+  eyeDx = ex; eyeDy = ey; time = tm;
 }
 
 function renderPanel() {
@@ -1685,13 +1722,13 @@ function renderPanel() {
       ? `<strong>${CUTS[selCut].n}</strong><br>${CUTS[selCut].d}`
       : 'Touchez une coupe pour la découvrir. Chaque coupe trouvée ajoute +2 % à vos tarifs.';
     const sinfo = selStar >= 0
-      ? `<strong>${STARS[selStar].n}</strong><br>${STARS[selStar].d}`
-      : `Des clients pas comme les autres poussent parfois la porte. Ils paient x${STAR_PAY} et rejoignent votre album.`;
+      ? `<strong>${STARS[selStar].n}</strong> · <span class="rar r${STARS[selStar].r || 0}">${rarOf(STARS[selStar])[0]} · paie x${rarOf(STARS[selStar])[1]}</span><br>${STARS[selStar].d}`
+      : `Des clients pas comme les autres poussent parfois la porte. Ils paient de x4 (Rare) à x50 (Mythique) et rejoignent votre album.`;
     h += `<h2>Personnalités ${S.stars.length}/${STARS.length}</h2><div class="cut-info">${sinfo}</div><div class="grid">`;
     STARS.forEach((s, i) => {
       h += S.stars.includes(i)
-        ? `<button class="tile star ${i === selStar ? 'sel' : ''}" data-star="${i}"><canvas></canvas><span>${s.n}</span></button>`
-        : `<div class="tile locked"><div class="q">★</div><span>Univers ${TIERS[s.at].n}</span></div>`;
+        ? `<button class="tile star r${s.r || 0} ${i === selStar ? 'sel' : ''}" data-star="${i}"><canvas></canvas><span>${s.n}</span></button>`
+        : `<div class="tile locked r${s.r || 0}"><div class="q">★</div><span><b class="rar r${s.r || 0}">${rarOf(s)[0]}</b><br>${s.noel ? 'En décembre' : TIERS[s.at].n}</span></div>`;
     });
     h += '</div><p class="muted">Personnages inventés pour le jeu : toute ressemblance serait fortuite.</p>';
     h += `<h2>Collection ${S.cuts.length}/${CUTS.length}</h2><div class="cut-info">${info}</div><div class="grid">`;

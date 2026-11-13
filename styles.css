@@ -341,3 +341,26 @@ tr.me td { color: var(--gold2); font-weight: 600; background: rgba(217,184,95,.1
 .board tr.win td { font-weight: 600; }
 button.cta { border: 0; cursor: pointer; font-family: inherit; }
 button.cta.ghost { background: none; border: 1px solid var(--gold); color: var(--gold2); }
+/* ---------- V7 : gestes, raretés, teintes, premiers pas ---------- */
+#pick { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(300px, 88%); padding: 10px; border-radius: 14px; background: rgba(28,26,23,.94); border: 1px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,.55); z-index: 4; }
+#pick[hidden] { display: none; }
+#pick .pk-q { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+#pick canvas { width: 84px; border-radius: 10px; background: radial-gradient(circle at 50% 45%, #6a6258, #37332e); flex: none; }
+#pick .pk-q span { font-weight: 600; font-size: 15px; color: var(--gold2); }
+#pick .pk-q small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+#pick button { display: block; width: 100%; margin-top: 6px; min-height: 42px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+#pick > i { display: block; height: 4px; margin-top: 8px; border-radius: 2px; background: rgba(255,255,255,.14); overflow: hidden; }
+#pick u { display: block; height: 100%; background: var(--gold); }
+#coach { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); width: max-content; max-width: 90%; padding: 9px 14px; border-radius: 12px; background: var(--gold); color: #1c1a17; font-size: 14px; font-weight: 600; text-align: center; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,.5); z-index: 4; animation: coach 1.2s ease-in-out infinite; }
+#coach[hidden] { display: none; }
+@keyframes coach { 50% { transform: translate(-50%, -4px); } }
+.coach-on { outline: 3px solid var(--gold2); outline-offset: 3px; border-radius: 10px; animation: coachon 1s ease-in-out infinite; }
+@keyframes coachon { 50% { outline-color: transparent; } }
+.rar { font-weight: 600; } .rar.r0 { color: #6fb3ff; } .rar.r1 { color: #c58bff; } .rar.r2 { color: #ffb347; } .rar.r3 { color: #ff6b9d; }
+.tile.r0 { border-color: rgba(111,179,255,.55); } .tile.r1 { border-color: rgba(197,139,255,.7); } .tile.r2 { border-color: rgba(255,179,71,.8); }
+.tile.r3 { border-color: #ff6b9d; box-shadow: 0 0 12px rgba(255,107,157,.45); }
+.tile.star.r1 canvas { background: radial-gradient(circle at 50% 45%, #8a5fc4, #2c1a4a); } .tile.star.r2 canvas { background: radial-gradient(circle at 50% 45%, #d9902e, #4a2c0a); } .tile.star.r3 canvas { background: radial-gradient(circle at 50% 45%, #e0457f, #2a0a2c 80%); }
+.dyes { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.dyes span { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; font-size: 12px; }
+.dyes i { width: 18px; height: 18px; border-radius: 50%; flex: none; background: #3a352f; }
+.dyes .off { opacity: .5; }

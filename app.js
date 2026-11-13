@@ -1,4 +1,4 @@
-/* Signature Cut by Tracy – le jeu (clicker) · V3
+/* Signature Cut by Tracy – le jeu (clicker) · V6 (nouveautés V6 dans plus.js)
    Rendu vectoriel lisse sur canvas, net sur tous les écrans. Tout est local (localStorage).
    V3 : univers de clientèle, activités (shampoing, massage, soin, lotion), décor animé, musique,
    vente de produits avec historique, fauteuils d'équipe.
@@ -27,6 +27,9 @@ const SALON = {
 // Récompense : code de réduction. À VALIDER avec Tracy (montant, conditions).
 // Il faut atteindre le niveau ET avoir joué activement au moins minMinutes.
 const REWARD = { level: 12, minMinutes: 15, label: '-10 %', terms: 'Valable une fois, sur présentation au salon.' };
+// Concours : dates au format 'AAAA-MM-JJ' (vide = « dates à venir »). Lots À VALIDER avec Tracy.
+const CONTEST = { start: '', end: '', prizes: ['1er : une coupe offerte', '2e, 3e et 4e : une réduction (montant à confirmer)'] };
+const X = {}; // points d'accroche remplis par plus.js (V6 : événements, franchise, trophées, décoration…)
 const XP0 = 65; // vitesse des niveaux (voir xpNeed) : niveau 12 vers 10-12 min en jouant vite, le plancher de 15 min fait le reste
 
 // La vraie carte du salon : prix et durées Planity. "cost" = prix de déblocage dans le jeu.
@@ -78,7 +81,7 @@ const PRODUCTS = [['Gel coiffant', 12], ['Cire mate', 14], ['Lotion après-rasag
    n'est reproduit (droit à l'image, droit d'auteur). at = univers minimum, look = tenue (0 à 5 comme les
    univers, 6 = blouson de cuir), col = couleur de tenue, jw = bijoux (3 à 5), acc = accessoires. */
 const STARS = [
-  { n: 'Kenzo le Héros', d: 'Tout droit sorti d\'un manga : bandeau, cicatrice et cheveux bleus.', at: 1, look: 0, col: '#e9e4d8', hair: 7, acc: ['headband', 'scar'], pitch: 1.5, say: [['fr-FR', 'Merci ! Je deviendrai le plus fort !'], ['ja-JP', 'Arigatou !'], ['fr-FR', 'Trop stylé, merci !']] },
+  { n: 'Kenzo le Héros', d: 'Tout droit sorti d\'un manga : bandeau, cicatrice et cheveux bleus.', at: 1, look: 0, col: '#e9e4d8', hair: 7, acc: ['headband', 'scar'] },
   { n: 'Le Streamer', d: 'En live douze heures par jour, casque autour du cou.', at: 1, look: 0, col: '#6b3fa0', acc: ['headphones', 'glasses'] },
   { n: 'Le Pirate', d: 'Un œil, un trésor, et une envie de changer de tête.', at: 1, look: 0, col: '#7a2e2e', acc: ['patch'] },
   { n: 'Le Boss de la Tech', d: 'Blouson de cuir et keynotes : il vend des puces au monde entier.', at: 2, look: 6, hair: 5, acc: ['glasses'] },
@@ -86,12 +89,12 @@ const STARS = [
   { n: 'Le Champion', d: 'Médaille d\'or autour du cou, il sort du podium.', at: 2, look: 4, col: '#1d3f8f', acc: ['medal'] },
   { n: 'Le Chef étoilé', d: 'Trois étoiles et pas un cheveu dans la soupe.', at: 2, look: 1, col: '#f4f4f0', acc: ['stache'] },
   { n: 'Le Rockeur', d: 'Cuir, lunettes noires et larsen.', at: 2, look: 6, acc: ['shades', 'tattoo'] },
-  { n: 'MC Diamant', d: 'Rappeur : il ne sourit que pour montrer ses diamants.', at: 3, look: 4, jw: 5, grillz: true, hair: 0, acc: ['shades'], pitch: 0.3, say: [['fr-FR', 'Lourd. Merci chef.'], ['en-US', 'Yeah. Thank you.'], ['fr-FR', 'Propre. Très propre.']] },
+  { n: 'MC Diamant', d: 'Rappeur : il ne sourit que pour montrer ses diamants.', at: 3, look: 4, jw: 5, grillz: true, hair: 0, acc: ['shades'] },
   { n: 'La Popstar', d: 'Cheveux roses, paillettes et refrain entêtant.', at: 3, look: 5, jw: 4, hair: 6, acc: ['starcheek'] },
   { n: 'DJ Néon', d: 'Il mixe jusqu\'au lever du soleil, lunettes fluo sur le nez.', at: 3, look: 3, acc: ['headphones', 'neon'] },
-  { n: 'El Tornado', d: 'Catcheur masqué : personne n\'a jamais vu son visage.', at: 3, look: 0, col: '#c8372f', acc: ['mask'], pitch: 0.5, say: [['es-ES', '¡Muchas gracias, amigo!'], ['fr-FR', 'Merci ! El Tornado est prêt pour le ring !']] },
-  { n: 'Baron Pépite', d: 'Vieux magnat : monocle, moustache blanche et coffre-fort bien rempli.', at: 4, look: 2, col: '#5a2148', hair: 5, jw: 3, acc: ['monocle', 'stache'], pitch: 0.4, say: [['fr-FR', 'Splendide. Gardez la monnaie !'], ['fr-FR', 'Merci, mon brave !']] },
-  { n: 'Unité IA-26', d: 'Un robot qui veut une coupe « plus humaine ».', at: 4, look: 4, col: '#39424e', skin: 4, hair: 8, acc: ['visor', 'antenna'], pitch: 0.1, say: [['fr-FR', 'Merci. Coupe enregistrée. Bip.'], ['en-US', 'Thank you. Haircut complete.'], ['fr-FR', 'Niveau de style : maximum.']] },
+  { n: 'El Tornado', d: 'Catcheur masqué : personne n\'a jamais vu son visage.', at: 3, look: 0, col: '#c8372f', acc: ['mask'] },
+  { n: 'Baron Pépite', d: 'Vieux magnat : monocle, moustache blanche et coffre-fort bien rempli.', at: 4, look: 2, col: '#5a2148', hair: 5, jw: 3, acc: ['monocle', 'stache'] },
+  { n: 'Unité IA-26', d: 'Un robot qui veut une coupe « plus humaine ».', at: 4, look: 4, col: '#39424e', skin: 4, hair: 8, acc: ['visor', 'antenna'] },
 ];
 const STAR_PAY = 4; // une personnalité paie x4
 // Défis : k = compteur suivi, n = objectifs possibles
@@ -172,18 +175,21 @@ const FACTS = [
    2. ÉTAT ET SAUVEGARDE
    ===================================================================== */
 const KEY = 'tsj-v2';
-const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0, stars: [], stat: {}, mis: [], name: '', pid: '' });
+const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0, stars: [], stat: {}, mis: [], name: '', pid: '', base: 0, pres: 0, staff: [], deco: [], troph: [], day: '', streak: 0, spin: '', last: 0 });
 let S = fresh();
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch { /* stockage indisponible */ }
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
+const save = () => { if (simT !== null) return; S.last = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
 
 const lvl = (id) => S.tools[id] || 0;
 const power = () => 1 + lvl('ciseaux') + 4 * lvl('tondeuse');
 const autoRate = () => 2 * lvl('apprenti');
-const mult = () => 1 + 0.1 * lvl('lotion') + 0.02 * S.cuts.length;
+const mult = () => (1 + 0.1 * lvl('lotion') + 0.02 * S.cuts.length) * (X.mult ? X.mult() : 1);
+const TIER_GROW = 5; // dans chaque nouvelle ville (franchise), les seuils des univers sont multipliés par 5
+const tierAt = (i) => TIERS[i].at * Math.pow(TIER_GROW, S.pres || 0);
+const runTotal = () => S.total - (S.base || 0); // gains depuis l'ouverture du salon actuel (franchise)
 const toolCost = (t) => Math.floor(t.base * Math.pow(t.g, lvl(t.id)));
 const svcOf = (id) => SERVICES.find((s) => s.id === id);
-const tierNow = () => { let i = 0; while (i < TIERS.length - 1 && S.total >= TIERS[i + 1].at) i++; return i; };
+const tierNow = () => { let i = 0; while (i < TIERS.length - 1 && runTotal() >= tierAt(i + 1)) i++; return i; };
 const seatPeriod = () => SEAT_TIME * Math.pow(0.9, lvl('formation'));
 const seatPay = () => { // un fauteuil d'équipe encaisse la moyenne de la carte débloquée
   const own = SERVICES.filter((s) => S.svc.includes(s.id));
@@ -334,7 +340,7 @@ function newClient() {
   const stubble = svc.kid ? 0 : rnd(2);
   const tn = tierNow(); // la plupart des clients viennent de l'univers atteint, quelques habitués restent
   let star = -1; // de temps en temps, une personnalité pousse la porte (de préférence une nouvelle)
-  if (S.served >= 3 && Math.random() < 0.06) {
+  if (S.served >= 3 && ((X.forceStar && X.forceStar()) || Math.random() < 0.06)) {
     const pool = [];
     STARS.forEach((s, i) => { if (s.at <= tn) pool.push(i); });
     const unseen = pool.filter((i) => !S.stars.includes(i));
@@ -363,10 +369,10 @@ function setupClient() {
   renderOrder();
 }
 
-function finishClient() {
+function finishClient(tip) {
   const c = S.client, svc = svcOf(c.svc);
   const isStar = c.star !== undefined && STARS[c.star];
-  const pay = Math.round(svc.price * mult() * TIERS[c.tier || 0].m * (c.vip ? 3 : 1) * (isStar ? STAR_PAY : 1));
+  const pay = Math.round(svc.price * mult() * TIERS[c.tier || 0].m * (c.vip ? 3 : 1) * (isStar ? STAR_PAY : 1) * (tip || 1) * (X.payMult ? X.payMult() : 1));
   const before = levelInfo().l;
   earn(pay); S.served++; S.xp += c.xp || c.need;
   bump('served');
@@ -378,7 +384,8 @@ function finishClient() {
   }
   for (const t of tufts) if (!t.gone) dropTuft(t);
   for (let i = 0; i < 26; i++) spark(110 + rnd(140), 130 + rnd(160));
-  shake = 1; sfx('cash'); if (VOICES) speak(c);
+  shake = 1; sfx('cash');
+  if (X.onFinish) X.onFinish(c, pay);
 
   const after = levelInfo().l;
   if (after > before) levelUp(after);
@@ -419,7 +426,7 @@ function addWork(w) {
   if (phase !== 'cut') return;
   S.work += w;
   const c = S.client;
-  if (S.work >= c.need) { S.work = c.need; finishClient(); return; }
+  if (S.work >= c.need) { S.work = c.need; if (!(X.perfect && X.perfect(c))) finishClient(); return; }
   syncTufts(true);
   const i = stepAt().i;
   if (i !== stepI) { // changement d'activité
@@ -1081,6 +1088,7 @@ function buildBg() {
   gr.addColorStop(0, '#191715'); gr.addColorStop(1, '#0d0c0b');
   g.fillStyle = gr; g.fillRect(0, fy, W, Hh - fy);
   g.fillStyle = 'rgba(217,184,95,.45)'; g.fillRect(0, fy, W, Math.max(1, k));
+  if (X.bg) { g.setTransform(k, 0, 0, k, ox, oy); X.bg(g, W, Hh, fy); g.setTransform(1, 0, 0, 1, 0, 0); }
 }
 
 /* ---------- Mains ---------- */
@@ -1208,11 +1216,12 @@ function frame(dt) {
   const now = nowMs();
   if (now - lastTap < 5000) S.playSec += dt; // temps de jeu actif uniquement
   for (let i = 0; i < S.seats; i++) { // les fauteuils de l'équipe tournent tout seuls
-    seatT[i] = (seatT[i] || 0) + dt / seatPeriod();
-    if (seatT[i] >= 1) { seatT[i] = 0; const pay = seatPay(); earn(pay); seatPop(i, pay); renderStats(); checkTier(); }
+    seatT[i] = (seatT[i] || 0) + dt / (seatPeriod() * (X.seatSpeed ? X.seatSpeed(i) : 1));
+    if (seatT[i] >= 1) { seatT[i] = 0; const pay = Math.round(seatPay() * (X.seatMult ? X.seatMult(i) : 1)); earn(pay); seatPop(i, pay); if (X.seatDone) X.seatDone(i); renderStats(); checkTier(); }
     if (seatBars[i]) seatBars[i].style.width = (seatT[i] * 100) + '%';
   }
-  if (hold && lvl('hold')) { // clic maintenu
+  if (X.frame) X.frame(dt);
+  if (hold && lvl('hold') && phase !== 'perfect') { // clic maintenu
     holdAcc += dt * 2 * lvl('hold');
     while (holdAcc >= 1) { holdAcc--; tapAt(hold.x + rnd(14) - 7, hold.y + rnd(14) - 7); }
   }
@@ -1304,6 +1313,7 @@ function draw() {
     else star(g, q.x, q.y, q.r * 1.6, q.col);
   }
   g.globalAlpha = 1;
+  if (X.draw) X.draw(g);
 }
 
 let last = performance.now();
@@ -1352,33 +1362,6 @@ function noise(t, dur, vol, ftype, fq, out) {
   src.connect(f); f.connect(g); g.connect(out);
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
   src.start(t); src.stop(t + dur + 0.02);
-}
-
-/* ---------- Voix des clients : synthèse vocale du navigateur, aucun fichier ---------- */
-const THANKS = [
-  ['fr-FR', 'Merci !'], ['fr-FR', 'Merci beaucoup !'], ['fr-FR', 'Top, merci !'], ['fr-FR', 'Parfait, merci Tracy !'], ['fr-FR', 'Oh, j\'adore !'],
-  ['fr-FR', 'Nickel, à la prochaine !'], ['fr-FR', 'Trop bien, merci !'], ['fr-FR', 'Impeccable !'], ['fr-FR', 'Mercii !'],
-  ['en-US', 'Thank you!'], ['en-US', 'Thanks a lot!'], ['en-US', 'Looking fresh, thank you!'], ['en-GB', 'Thank you so much!'], ['es-ES', '¡Gracias!'],
-];
-const VOICES = false; // désactivé : la synthèse vocale du navigateur sonne mal. Remettre à true pour réessayer.
-let voices = [];
-function loadVoices() { try { voices = speechSynthesis.getVoices(); } catch { /* pas de synthèse vocale */ } }
-if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
-function speak(c) {
-  if (!S.sound || simT !== null || !('speechSynthesis' in window)) return;
-  try {
-    if (speechSynthesis.speaking || speechSynthesis.pending) return; // on laisse finir la phrase en cours
-    const r = rng(c.seed + 3), sd = c.star !== undefined && STARS[c.star], svc = svcOf(c.svc);
-    const pick = sd && sd.say ? sd.say[Math.floor(r() * sd.say.length)] : THANKS[Math.floor(Math.random() * THANKS.length)];
-    const u = new SpeechSynthesisUtterance(pick[1]);
-    u.lang = pick[0];
-    // chaque client a sa voix : grave ou aiguë, lente ou pressée
-    u.pitch = sd && sd.pitch !== undefined ? sd.pitch : svc.kid ? 1.7 + r() * 0.3 : 0.5 + r() * 1.1;
-    u.rate = 0.9 + r() * 0.4; u.volume = 0.9;
-    const pool = voices.filter((v) => v.lang && v.lang.slice(0, 2) === pick[0].slice(0, 2));
-    if (pool.length) u.voice = pool[Math.floor(r() * pool.length)];
-    speechSynthesis.speak(u);
-  } catch { /* rien */ }
 }
 
 /* ---------- Musique d'ambiance : boucle lo-fi générée, aucun fichier ---------- */
@@ -1455,7 +1438,7 @@ function tapAt(vx, vy) {
     fever = FEVER; bump('turbo'); sfx('level');
     floatText('TURBO x2 !', 180, 92, 'step'); cash(14, CX, 200);
   }
-  const gain = power() * (1 + combo / 40) * (crit ? 5 : 1) * (fever > 0 ? 2 : 1);
+  const gain = power() * (1 + combo / 40) * (crit ? 5 : 1) * (fever > 0 ? 2 : 1) * (X.workMult ? X.workMult() : 1);
   bump('taps'); if (crit) bump('crits');
   $('hint').hidden = true;
 
@@ -1484,6 +1467,7 @@ function tapAt(vx, vy) {
 stage.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   if (e.target.closest('#offer')) { sellOffer(); return; }
+  if (phase === 'perfect') { if (X.perfectTap) X.perfectTap(); return; }
   hold = toV(e); holdAcc = 0;
   tapAt(hold.x, hold.y);
 });
@@ -1532,7 +1516,7 @@ async function pushScore() {
   if (!S.pid) S.pid = (crypto.randomUUID ? crypto.randomUUID() : 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
   const sent = Math.floor(S.total);
   try {
-    const r = await fetch(`${API}?s=${SEASON}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: S.pid, name: S.name, score: sent, level: levelInfo().l }) });
+    const r = await fetch(`${API}?s=${SEASON}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: S.pid, name: S.name, score: sent, level: levelInfo().l, play: Math.floor(S.playSec), title: X.title ? X.title() : '' }) });
     if (!r.ok) return null;
     lastPush = sent;
     return await r.json();
@@ -1555,12 +1539,14 @@ async function showBoard() {
   if (!d) { try { const r = await fetch(`${API}?s=${SEASON}&id=${encodeURIComponent(S.pid)}`); d = r.ok ? await r.json() : null; } catch { d = null; } }
   if ($('modal').hidden) return;
   if (!d || !d.top) { modal('<h3>Classement</h3><p>Classement indisponible pour le moment. Vérifiez votre connexion et réessayez.</p>'); return; }
-  const row = (e) => `<tr class="${e.me ? 'me' : ''}"><td>${e.r}</td><td>${esc(e.n)}<small>niv. ${e.l}</small></td><td>${fmt(e.s)} €</td></tr>`;
-  let h = `<h3>Classement</h3><p class="muted">Gains cumulés · ${d.count} joueur${d.count > 1 ? 's' : ''}</p><div class="board"><table>` + d.top.slice(0, 20).map(row).join('') + '</table></div>';
+  const medal = ['🥇', '🥈', '🥉'];
+  const row = (e) => `<tr class="${e.me ? 'me' : ''}${e.r <= 4 ? ' win' : ''}"><td>${medal[e.r - 1] || e.r}</td><td>${esc(e.n)}<small>${e.t ? esc(e.t) + ' · ' : ''}niv. ${e.l}</small></td><td>${fmt(e.s)} €</td></tr>`;
+  let h = '<h3>Classement</h3>' + (X.contest ? X.contest() : '') + `<p class="muted">Gains cumulés · ${d.count} joueur${d.count > 1 ? 's' : ''}</p><div class="board"><table>` + d.top.slice(0, 20).map(row).join('') + '</table></div>';
   if (d.me && d.me.r > 20) h += `<table class="board-me">${row({ ...d.me, me: true })}</table>`;
-  h += `<p class="muted">Vous jouez sous le pseudo <b>${esc(S.name)}</b>. <button class="link inline" id="rename">Changer</button></p>`;
+  h += `<p class="muted">Vous jouez sous le pseudo <b>${esc(S.name)}</b>. <button class="link inline" id="rename">Changer</button> · <button class="link inline" id="share">Partager mon score</button></p>`;
   modal(h, null, 'Fermer');
   $('rename').addEventListener('click', () => askName(showBoard));
+  $('share').addEventListener('click', () => X.share && X.share());
 }
 $('rank').addEventListener('click', showBoard);
 setInterval(pushScore, 30000);
@@ -1568,7 +1554,7 @@ setInterval(pushScore, 30000);
 function renderCombo() {
   const tb = fever > 0;
   $('combo-txt').textContent = tb ? 'TURBO x2' : 'Rythme x' + (1 + combo / 40).toFixed(1).replace('.', ',');
-  $('combo-bar').style.width = (tb ? fever / FEVER : combo / 40) * 100 + '%';
+  $('combo-bar').style.width = Math.min(1, tb ? fever / FEVER : combo / 40) * 100 + '%';
   $('combo').classList.toggle('turbo', tb);
   $('combo').classList.toggle('on', (tb || combo >= 5) && !$('toast').classList.contains('on'));
 }
@@ -1628,7 +1614,7 @@ function renderOrder() {
 // Bandeau des fauteuils de l'équipe, en bas de la scène
 function renderSeats() {
   let h = '';
-  for (let i = 0; i < S.seats; i++) h += `<div class="seat"><span>Fauteuil ${i + 2}</span><i><b></b></i><em></em></div>`;
+  for (let i = 0; i < S.seats; i++) h += `<div class="seat"><span>${X.seatName ? X.seatName(i) : 'Fauteuil ' + (i + 2)}</span><i><b></b></i><em></em></div>`;
   $('seats').innerHTML = h;
   if (S.seats) $('hint').hidden = true;
   seatBars = [...$('seats').querySelectorAll('b')];
@@ -1674,12 +1660,12 @@ function renderPanel() {
   } else if (tab === 'biz') {
     const tn = tierNow(), nx = TIERS[tn + 1];
     h += `<h2>Univers : ${TIERS[tn].n}</h2><p>${TIERS[tn].d}</p>`;
-    if (nx) h += `<p class="muted">Prochain univers : <b>${nx.n}</b> à ${fmt(nx.at)} € de gains cumulés (vous : ${fmt(S.total)} €).</p>` +
-      `<div class="bar big"><i style="width:${Math.min(100, (S.total - TIERS[tn].at) / (nx.at - TIERS[tn].at) * 100)}%"></i></div>`;
+    if (nx) h += `<p class="muted">Prochain univers : <b>${nx.n}</b> à ${fmt(tierAt(tn + 1))} € de gains dans ce salon (vous : ${fmt(runTotal())} €).</p>` +
+      `<div class="bar big"><i style="width:${Math.min(100, (runTotal() - tierAt(tn)) / (tierAt(tn + 1) - tierAt(tn)) * 100)}%"></i></div>`;
     h += '<div class="tiers">' + TIERS.map((t, i) => `<span class="${i <= tn ? 'on' : ''}">${i <= tn ? t.n : '?'}<small>x${String(t.m).replace('.', ',')}</small></span>`).join('') + '</div>';
     h += `<h2>Fauteuils ${S.seats + 1}/${SEATS.length + 1}</h2>` +
       '<div class="item owned"><div class="grow"><strong>Fauteuil 1</strong><small>Le vôtre : c\'est ici que vous cliquez.</small></div><span class="tag">Vous</span></div>';
-    for (let i = 0; i < S.seats; i++) h += `<div class="item owned"><div class="grow"><strong>Fauteuil ${i + 2}</strong><small>Un coiffeur de l'équipe : +${fmt(seatPay())} € toutes les ${seatPeriod().toFixed(1).replace('.', ',')} s</small></div><span class="tag">Ouvert</span></div>`;
+    for (let i = 0; i < S.seats; i++) h += X.seatRow ? X.seatRow(i) : '';
     if (S.seats < SEATS.length) h += `<div class="item"><div class="grow"><strong>Ouvrir le fauteuil ${S.seats + 2}</strong><small>Un coiffeur de plus : il encaisse tout seul, sans clic.</small></div><button class="buy" data-seat="1" data-cost="${SEATS[S.seats]}">${fmt(SEATS[S.seats])} €</button></div>`;
     h += `<h2>Ventes de produits</h2><p class="muted">${S.salesN} vente${S.salesN > 1 ? 's' : ''} · ${fmt(S.salesSum)} € · ${Math.round(offerChance() * 100)} % de chances par client. Quand un client hésite, touchez la bulle avant qu'elle disparaisse.</p>`;
     h += S.sales.length
@@ -1729,6 +1715,7 @@ function renderPanel() {
       '<button class="link" id="verify">Vérifier un code (réservé au salon)</button>' +
       '<button class="link" id="reset">Recommencer la partie</button>';
   }
+  if (X.panel) h = X.panel(tab, h);
   panel.innerHTML = h;
   misSig = S.mis.map((m) => misProg(m) >= m.n).join();
   if (tab === 'cuts') {
@@ -1767,13 +1754,14 @@ panel.addEventListener('click', (e) => {
     selStar = +b.dataset.star;
   } else if (b.dataset.cut) {
     selCut = +b.dataset.cut;
+  } else if (X.click && X.click(b)) { /* géré par plus.js */
   } else if (b.id === 'verify') {
     const code = prompt('Code présenté par le client :');
     if (code) modal(codeValid(code) ? '<h3>Code valide</h3><p>Ce code a bien été généré par le jeu.</p>' : '<h3>Code invalide</h3><p>Ce code ne correspond à aucun code du jeu.</p>');
     return;
   } else if (b.id === 'reset') {
     if (!confirm('Effacer la partie et recommencer ? Le code de réduction sera perdu.')) return;
-    const snd = S.sound, mus = S.music, nm = S.name, pid = S.pid; S = fresh(); S.sound = snd; S.music = mus; S.name = nm; S.pid = pid; while (S.mis.length < 3) S.mis.push(newMission()); newClient(); phase = 'cut'; selCut = -1; selStar = -1; buildBg(); renderSeats();
+    const snd = S.sound, mus = S.music, nm = S.name, pid = S.pid, day = S.day, spin = S.spin, streak = S.streak; S = fresh(); S.sound = snd; S.music = mus; S.name = nm; S.pid = pid; S.day = day; S.spin = spin; S.streak = streak; while (S.mis.length < 3) S.mis.push(newMission()); newClient(); phase = 'cut'; selCut = -1; selStar = -1; buildBg(); renderSeats();
   } else return;
   save();
   renderPanel();

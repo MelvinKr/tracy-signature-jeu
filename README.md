@@ -4,7 +4,7 @@ Clicker pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en tou
 on débloque les prestations du salon, on fait grandir son salon et on gagne un code de réduction.
 Pensé pour téléphone en portrait, adapté aux tablettes et aux ordinateurs.
 
-## État : V5
+## État : V6
 
 Site statique (HTML, CSS, JS), sans serveur. Le personnage, les coupes et le décor sont dessinés en vectoriel
 sur un canvas (`app.js`), nets sur tous les écrans. La partie est sauvegardée sur l'appareil (`localStorage`).
@@ -39,11 +39,31 @@ Nouveautés de la V5 :
   partagé entre tous les joueurs grâce à une fonction Netlify (`netlify/functions/scores.mjs`, route `/api/scores`)
   qui stocke pseudo, score et niveau dans Netlify Blobs. Aucune autre donnée n'est collectée.
   Pour repartir de zéro (nouveau concours), changer `SEASON` dans `app.js`.
-  Limite : le score est envoyé par le navigateur, un tricheur peut donc envoyer un faux score. Les pseudos ne sont
-  ni uniques ni modérés.
-- **Sons** : caisse enregistreuse et billets à chaque encaissement.
-- **Voix** : les clients remercient (« Merci ! », « Thank you! »…) avec la synthèse vocale du navigateur, voix et
-  intonation différentes selon le client. La qualité dépend des voix installées sur l'appareil.
+  Limite : le score est envoyé par le navigateur (voir le contrôle ajouté en V6). Les pseudos ne sont ni uniques
+  ni modérés.
+- **Sons** : caisse enregistreuse et billets à chaque encaissement. Pas de voix (essai retiré).
+
+Nouveautés de la V6 (fichier `plus.js`, branché sur `app.js` par l'objet `X`) :
+
+- **Concours** : encart avec les dates, le temps restant et les lots, dans le classement, l'onglet Infos et l'écran
+  d'accueil. Dates et lots dans `CONTEST` (`app.js`). **Dates et lots à valider avec Tracy.**
+- **Bonus du jour et roue** : un cadeau par jour, plus gros si on revient plusieurs jours de suite (jusqu'au 7e),
+  et un lancer de roue par jour (onglet Outils).
+- **Gains hors ligne** : l'équipe encaisse pendant l'absence, à moitié régime, 4 heures au plus.
+- **Franchise** : arrivé dans l'univers Légendes, on peut ouvrir un salon dans une autre ville (Pau, Biarritz,
+  Bayonne, Toulouse, Bordeaux, Lyon, Marseille, Paris). On repart de zéro avec des tarifs x3, x5, x7… ; les seuils
+  des univers sont multipliés par 5 à chaque ville (`TIER_GROW`).
+- **Événements** : heure de pointe, mariage, influenceur qui filme.
+- **Coup parfait** : une jauge à la fin de certaines coupes ; bien visé, le client paie x1,5 ou x2.
+- **Trophées** : 24 succès, +1 % sur les tarifs chacun ; le plus prestigieux sert de titre dans le classement.
+- **Équipe** : chaque fauteuil a son coiffeur (prénoms inventés), à former sur 5 niveaux.
+- **Décoration** : 6 objets visibles dans le salon, +3 % chacun, conservés de ville en ville.
+- **Partage** du score, **installation** sur l'écran d'accueil (`manifest.webmanifest`, `sw.js`).
+- **Classement** : le serveur refuse les scores impossibles pour le temps de jeu (plafond = 20 fois la courbe d'un
+  joueur simulé à 10 clics par seconde). Cela écarte les faux scores grossiers, pas un tricheur appliqué.
+
+Mesure par simulation (10 clics par seconde, achats immédiats) : premier salon terminé en 10 min environ, le
+deuxième en 9 min, le troisième en 19 min, puis de plus en plus long. Non vérifié avec de vrais joueurs.
 
 ## Ce qui est réel, ce qui est du jeu
 

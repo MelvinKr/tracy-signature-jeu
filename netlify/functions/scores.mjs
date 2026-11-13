@@ -1,10 +1,22 @@
 // Classement partagé du jeu. GET /api/scores?s=<saison>&id=<joueur> : lit le classement.
 // POST /api/scores?s=<saison> { id, name, score, level } : enregistre le meilleur score du joueur.
 // Stockage : Netlify Blobs (un document JSON par saison). Aucune donnée personnelle : un pseudo et un score.
-// Limite connue : le score est envoyé par le navigateur, un tricheur peut donc envoyer un faux score.
+// Le score est envoyé par le navigateur : le serveur refuse seulement les scores impossibles pour le temps de jeu
+// (voir maxScore). Cela écarte les faux scores grossiers, pas un tricheur appliqué.
 import { getStore } from '@netlify/blobs';
 
-const MAX_PLAYERS = 1000, TOP = 50, MAX_SCORE = 1e12;
+const MAX_PLAYERS = 1000, TOP = 50, MAX_SCORE = 1e15;
+// Plafond de vraisemblance. Courbe mesurée par simulation (joueur à 10 clics/s qui achète tout, V6) :
+// 1 min 3 k, 5 min 122 k, 10 min 1,9 M, 30 min 27 M, 60 min 103 M. On tolère 20 fois plus.
+const CURVE = [[0.1, 300], [1, 3000], [2, 12000], [5, 125000], [10, 1.9e6]], MARGIN = 20, FIRST_MAX = 3 * 3600;
+function maxScore(min) {
+  min = Math.max(0.1, min);
+  if (min >= 10) return MARGIN * 1.9e6 * Math.pow(min / 10, 2.5);
+  let i = 1;
+  while (min > CURVE[i][0]) i++;
+  const [a, va] = CURVE[i - 1], [b, vb] = CURVE[i];
+  return MARGIN * Math.exp(Math.log(va) + (Math.log(vb) - Math.log(va)) * (Math.log(min / a) / Math.log(b / a)));
+}
 const clean = (s) => String(s || '').replace(/[<>&"'`\\\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
 
 export default async (req) => {
@@ -24,8 +36,12 @@ export default async (req) => {
     if (id.length < 8 || name.length < 2 || !Number.isFinite(score) || score < 0 || score > MAX_SCORE) {
       return Response.json({ error: 'invalid' }, { status: 400 });
     }
-    const prev = board[id];
-    board[id] = { n: name, s: Math.max(score, prev ? prev.s : 0), l: Math.min(999, Math.max(level, prev ? prev.l : 1)), t: Date.now() };
+    const prev = board[id], now = Date.now(), title = clean(b.title).slice(0, 24);
+    // temps de jeu crédible : celui du premier envoi (3 h au plus), puis le temps réellement écoulé depuis
+    const play = Number(b.play), f = prev && prev.f ? prev.f : now, p0 = prev && prev.p0 !== undefined ? prev.p0 : Math.min(Number.isFinite(play) ? Math.max(0, play) : FIRST_MAX, FIRST_MAX);
+    const allowed = p0 + (now - f) / 1000 + 600, eff = Number.isFinite(play) ? Math.min(Math.max(0, play), allowed) : allowed;
+    if (score > maxScore(eff / 60)) return Response.json({ error: 'implausible' }, { status: 400 });
+    board[id] = { n: name, s: Math.max(score, prev ? prev.s : 0), l: Math.min(999, Math.max(level, prev ? prev.l : 1)), t: now, f, p0, ti: title };
     const ids = Object.keys(board);
     if (ids.length > MAX_PLAYERS) { // on garde les meilleurs
       ids.sort((a, c) => board[c].s - board[a].s).slice(MAX_PLAYERS).forEach((k) => { if (k !== id) delete board[k]; });
@@ -38,7 +54,7 @@ export default async (req) => {
   const all = Object.entries(board).sort((a, c) => c[1].s - a[1].s);
   const rank = all.findIndex(([k]) => k === id);
   return Response.json({
-    top: all.slice(0, TOP).map(([k, e], i) => ({ r: i + 1, n: e.n, s: e.s, l: e.l, me: k === id })), // les identifiants ne sortent jamais
+    top: all.slice(0, TOP).map(([k, e], i) => ({ r: i + 1, n: e.n, s: e.s, l: e.l, t: e.ti || '', me: k === id })), // les identifiants ne sortent jamais
     me: rank >= 0 ? { r: rank + 1, n: all[rank][1].n, s: all[rank][1].s, l: all[rank][1].l } : null,
     count: all.length,
   }, { headers: { 'Cache-Control': 'no-store' } });

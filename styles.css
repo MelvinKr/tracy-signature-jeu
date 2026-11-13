@@ -454,3 +454,50 @@ button.rdvbtn { width: 100%; border: 0; font-family: inherit; cursor: pointer; }
 body.kid #info, body.kid #rdv, body.kid .rdvbtn, body.kid .hintline, body.kid .statline, body.kid #gift, body.kid .order-sub, body.kid #event span { display: none; }
 body.kid #toast { font-size: 0; } body.kid #toast b { font-size: 16px; }
 body.kid .ic .em .gi { width: 42px; height: 42px; }
+/* ---------- V10 : socle mobile, client en or, maîtrise, talents, pastille de rendez-vous ---------- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { touch-action: manipulation; }
+button, a { -webkit-touch-callout: none; }
+#rank, #snd { width: 40px; height: 40px; display: grid; place-items: center; }
+#rank .gi { width: 20px; height: 20px; }
+.gi.in { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -.22em; stroke-width: 1.9; }
+.md { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-style: normal; font-size: 12px; font-weight: 700; color: #1c1a17; }
+.md.g { background: linear-gradient(145deg, #fff0a8, #d9b85f); } .md.s { background: linear-gradient(145deg, #f4f6f9, #aab2bd); } .md.b { background: linear-gradient(145deg, #f0b98a, #b06a35); }
+#order-svc { white-space: normal; overflow: visible; font-size: 15px; line-height: 1.2; }
+#info a { font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px; }
+.float { font-size: 15px; animation-duration: .6s; } .float.miss { font-size: 13px; color: #c9c2b5; font-weight: 500; }
+#gift { position: relative; background: linear-gradient(90deg, rgba(217,184,95,.42) calc(var(--p, 0) * 100%), transparent 0), linear-gradient(90deg, #3a3018, #5a4a20, #3a3018); }
+#golden { position: absolute; left: -64px; top: 30%; width: 58px; height: 58px; border-radius: 50%; border: 2px solid #fff3c4; padding: 0; cursor: pointer; z-index: 5; background: radial-gradient(circle at 35% 30%, #fff6c8, #ffd36b 55%, #b8862a); box-shadow: 0 0 0 4px rgba(255,214,110,.3), 0 0 26px rgba(255,214,110,.9); touch-action: none; }
+#golden[hidden] { display: none; }
+#golden .gi { width: 34px; height: 34px; margin: auto; stroke: #5a3d00; } #golden .gi .a { fill: rgba(90,61,0,.25); }
+#golden.run { animation: goldrun 8s linear forwards, goldbob 1.1s ease-in-out infinite; }
+@keyframes goldrun { to { left: 100%; } }
+@keyframes goldbob { 50% { margin-top: -16px; } }
+#frenzy { position: absolute; right: 8px; top: 40px; display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: linear-gradient(180deg, #ffe08a, #d9b85f); color: #1c1a17; font-weight: 700; z-index: 3; pointer-events: none; box-shadow: 0 0 18px rgba(255,214,110,.8); }
+#frenzy[hidden] { display: none; } #frenzy .gi { width: 18px; height: 18px; stroke: #1c1a17; } #frenzy span { font-size: 12px; font-weight: 600; }
+#rdv .go span .gi { width: 26px; height: 26px; stroke: #1c1a17; } #rdv .go span .gi .a { fill: rgba(28,26,23,.2); }
+#rdv .short { display: none; }
+#rdv.pill { left: auto; right: 8px; bottom: 46px; animation: none; }
+#rdv.pill .go { padding: 6px 12px 6px 8px; column-gap: 5px; animation: none; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+#rdv.pill .go span .gi { width: 20px; height: 20px; }
+#rdv.pill .long, #rdv.pill small, #rdv.pill .x, #rdv.pill .never { display: none; } #rdv.pill .short { display: block; font-size: 13px; }
+.rdvbtn .gi.in, .rdvbtn .gi { stroke: #1c1a17; } .rdvbtn .gi .a { fill: rgba(28,26,23,.2); }
+.talents { display: grid; gap: 8px; margin: 8px 0; }
+.talents button { display: grid; grid-template-columns: 44px 1fr; column-gap: 10px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--gold); background: var(--card); color: var(--text); font: inherit; cursor: pointer; }
+.talents button .gi { grid-row: span 2; width: 40px; height: 40px; } .talents b { color: var(--gold2); } .talents small { color: var(--muted); font-size: 13px; }
+.talrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; justify-content: center; }
+.talrow span { display: inline-flex; align-items: center; gap: 2px; padding: 4px 8px; border: 1px solid var(--gold); border-radius: 999px; background: rgba(217,184,95,.12); } .talrow .gi { width: 20px; height: 20px; } .talrow b { font-size: 12px; color: var(--gold2); }
+.tile .ms { display: block; font-style: normal; font-size: 12px; letter-spacing: 1px; color: #6b6357; line-height: 1; padding-top: 3px; }
+.tile .ms.m1 { color: #dd8250; } .tile .ms.m2 { color: #d6d6dc; } .tile .ms.m3 { color: #ffd36b; text-shadow: 0 0 6px rgba(255,211,107,.6); }
+body.kid #golden { width: 72px; height: 72px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 42%); grid-template-rows: auto minmax(0, 1fr); }
+  #hud { grid-column: 1 / -1; padding-left: calc(10px + env(safe-area-inset-left)); padding-right: calc(10px + env(safe-area-inset-right)); }
+  #play { min-height: 0; padding-left: env(safe-area-inset-left); }
+  #stage { flex: 1 1 0; height: auto; min-height: 0; }
+  #side { border-left: 1px solid var(--line); padding-right: env(safe-area-inset-right); }
+  #order { padding: 4px 10px; } .order-sub, #gift { display: none; }
+  #logo { height: 34px; }
+}
+@media (max-height: 640px) and (orientation: portrait) { #stage { height: 40dvh; } .order-sub { display: none; } }
+@media (prefers-reduced-motion: reduce) { #golden.run { animation: goldrun 8s linear forwards; } #rdv, #rdv .go, .rdvbtn.big, #coach { animation: none; } }#frenzy { top: 112px; }

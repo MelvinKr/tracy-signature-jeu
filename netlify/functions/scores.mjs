@@ -8,7 +8,7 @@ import { getStore } from '@netlify/blobs';
 const MAX_PLAYERS = 1000, TOP = 50, MAX_SCORE = 1e15;
 // Plafond de vraisemblance. Courbe mesurée par simulation (joueur à 10 clics/s qui achète tout, V6) :
 // 1 min 3 k, 5 min 122 k, 10 min 1,9 M, 30 min 27 M, 60 min 103 M. On tolère 20 fois plus.
-const CURVE = [[0.1, 300], [1, 3000], [2, 12000], [5, 125000], [10, 1.9e6]], MARGIN = 20, FIRST_MAX = 3 * 3600;
+const CURVE = [[0.1, 300], [1, 3000], [2, 12000], [5, 125000], [10, 1.9e6]], MARGIN = 60, FIRST_MAX = 3 * 3600;
 function maxScore(min) {
   min = Math.max(0.1, min);
   if (min >= 10) return MARGIN * 1.9e6 * Math.pow(min / 10, 2.5);

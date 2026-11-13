@@ -4,7 +4,7 @@ Clicker pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en tou
 on débloque les prestations du salon, on fait grandir son salon et on gagne un code de réduction.
 Pensé pour téléphone en portrait, adapté aux tablettes et aux ordinateurs.
 
-## État : V9
+## État : V10
 
 Site statique (HTML, CSS, JS), sans serveur. Le personnage, les coupes et le décor sont dessinés en vectoriel
 sur un canvas (`app.js`), nets sur tous les écrans. La partie est sauvegardée sur l'appareil (`localStorage`).
@@ -107,7 +107,26 @@ Nouveautés de la V9 (fichier `v9.js`, serveur `netlify/functions/game.mjs`, pag
 - **Mode enfant** (onglet Infos) : moins de texte, pas de lien de rendez-vous ; lecture des infobulles en option.
 - **Tenue du coiffeur** (onglet Salon), **musique propre à chaque univers**, **reprise sur un autre appareil** par code.
 - Correction : la boucle du jeu ne peut plus se figer après un retour sur l'onglet.
-Mesure par simulation (10 clics par seconde, achats immédiats) : premier salon terminé en 10 min environ, le
+Nouveautés de la V10 (fichier `v10.js`) – lot 1 du plan « mobile d'abord » :
+
+- **Rythme** : un client dure quelques secondes (2,5 à 4,5 s pour un joueur très rapide, 6 à 12 s pour un joueur
+  lent, en simulation). Exigence et tarifs montent en continu dans un univers (`tierFrac`, `lerpTier`), y compris
+  au-delà de Légendes. Seuils des univers relevés : Légendes vers 28 min (rapide) à 52 min (lent).
+  Réglages : `NEED_K`, `PAY_K`, `XP_K`, `TIERS[].at`. **Le classement repart sur la saison `s2`.**
+- **Client en or** : il traverse l'écran toutes les 2 à 4 minutes ; l'attraper donne des pièces, x7 sur les
+  encaissements ou x5 sur les clics pendant 20 s.
+- **Maîtrise des coupes** (bronze, argent, or à 3, 12 et 40 réalisations), **paliers d'outils** (effet x2 aux niveaux
+  10, 25, 50, 100, 200), **talents de franchise** (un choix parmi trois à chaque nouvelle ville), **défi du jour**,
+  nouvel outil « Œil de lynx » (coup de maître).
+- **Corrections** : messages en file d'attente, bulle de rendez-vous qui se replie en pastille, plus aucun émoji,
+  noms de prestation sur deux lignes, chiffres flottants limités, outils visibles devant la main, bulle de vente à
+  place fixe, Turbo plus tolérant, clic « à côté » moins payé, clic qui motive l'équipe, jauge validée au relâchement,
+  temps des événements suspendu quand une fenêtre est ouverte, pseudo demandé après 4 clients.
+- **Mobile** : mode paysage sur téléphone, petits écrans, cibles tactiles de 40 px, finesse d'image qui s'adapte aux
+  téléphones lents, icônes adaptatives Android, aperçu de partage (Open Graph), manifeste complété.
+- **Non fait dans ce lot** : durées des salons suivants non re-mesurées ; barbe du Père Noël ; les 17 améliorations
+  restantes (animations, ligues, compétences actives, etc.).
+Mesure par simulation (10 clics par seconde, achats immédiats, avant la V10) : premier salon terminé en 10 min environ, le
 deuxième en 9 min, le troisième en 19 min, puis de plus en plus long. Non vérifié avec de vrais joueurs.
 
 ## Ce qui est réel, ce qui est du jeu

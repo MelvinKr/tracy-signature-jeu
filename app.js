@@ -30,6 +30,10 @@ const REWARD = { level: 12, minMinutes: 15, label: '-10 %', terms: 'Valable une 
 // Concours : dates au format 'AAAA-MM-JJ' (vide = « dates à venir »). Lots À VALIDER avec Tracy.
 const CONTEST = { start: '', end: '', prizes: ['1er : une coupe offerte', '2e, 3e et 4e : une réduction (montant à confirmer)'] };
 const X = {}; // points d'accroche remplis par plus.js (V6 : événements, franchise, trophées, décoration…)
+// V10 : un client demande 8 fois plus de travail, paie 2,7 fois plus et donne 5 fois plus d'expérience ; exigence et tarifs montent
+// en continu à l'intérieur d'un univers (voir tierFrac), pour qu'un client dure toujours quelques secondes.
+const NEED_K = 8, PAY_K = 2.7, XP_K = 5;
+const MILE = [10, 25, 50, 100, 200]; // paliers d'outil : l'effet double à chacun de ces niveaux
 const COIN = 'Ŧ'; // monnaie du jeu : le Tracy coin. Les euros ne servent qu'aux vrais prix du salon.
 const XP0 = 65; // vitesse des niveaux (voir xpNeed) : niveau 12 vers 10-12 min en jouant vite, le plancher de 15 min fait le reste
 
@@ -55,6 +59,7 @@ const TOOLS = [
   { id: 'lotion', n: 'Lotion & soin', d: '+10 % sur chaque prestation', base: 150, g: 1.6 },
   { id: 'tondeuse', n: 'Tondeuse pro', d: '+4 de puissance par clic', base: 220, g: 1.5 },
   { id: 'bouche', n: 'Bouche-à-oreille', d: '+5 % de clients généreux (x3)', base: 400, g: 1.7, max: 10 },
+  { id: 'precision', n: 'Œil de lynx', d: '+2 % de chances de coup de maître (x5)', base: 350, g: 1.8, max: 12 },
   { id: 'hold', n: 'Clic maintenu', d: 'Restez appuyé : +2 clics automatiques par seconde', base: 300, g: 2.4, max: 4 },
   { id: 'presentoir', n: 'Présentoir produits', d: '+1,5 % de chances de vendre un produit', base: 250, g: 1.6, max: 8 },
   { id: 'formation', n: "Formation de l'équipe", d: 'Les autres fauteuils vont 10 % plus vite', base: 600, g: 1.7, max: 10 },
@@ -64,11 +69,11 @@ const TOOLS = [
    wall = couleurs du mur. Les tenues et bijoux sont génériques : aucune marque réelle n'est reproduite. */
 const TIERS = [
   { n: 'Quartier', at: 0, m: 1, d: 'Les habitués du quartier : t-shirts et petits budgets.', wall: ['#4a4640', '#3d3934', '#2a2723'] },
-  { n: 'Centre-ville', at: 500, m: 2.5, d: 'Le bouche-à-oreille gagne le centre de Pau : chemises et rendez-vous réguliers.', wall: ['#3f4a4c', '#33403f', '#222b2b'] },
-  { n: 'Affaires', at: 5000, m: 6, d: 'Costume, cravate et agenda chargé : ils veulent du net, vite.', wall: ['#3a3f52', '#2c3044', '#1c1f2e'] },
-  { n: 'Créateurs', at: 40000, m: 14, d: 'T-shirts noirs de créateur et chaînes en or.', wall: ['#4a3550', '#382640', '#221628'] },
-  { n: 'Stars', at: 300000, m: 30, d: 'Colliers et boucles d\'oreilles en diamant : le salon devient une adresse.', wall: ['#2c2c33', '#1e1e25', '#111116'] },
-  { n: 'Légendes', at: 2000000, m: 65, d: 'Diamants partout, jusque dans le sourire.', wall: ['#3d2f12', '#261c0a', '#120c03'] },
+  { n: 'Centre-ville', at: 2000, m: 2.5, d: 'Le bouche-à-oreille gagne le centre de Pau : chemises et rendez-vous réguliers.', wall: ['#3f4a4c', '#33403f', '#222b2b'] },
+  { n: 'Affaires', at: 30000, m: 6, d: 'Costume, cravate et agenda chargé : ils veulent du net, vite.', wall: ['#3a3f52', '#2c3044', '#1c1f2e'] },
+  { n: 'Créateurs', at: 400000, m: 14, d: 'T-shirts noirs de créateur et chaînes en or.', wall: ['#4a3550', '#382640', '#221628'] },
+  { n: 'Stars', at: 5000000, m: 30, d: 'Colliers et boucles d\'oreilles en diamant : le salon devient une adresse.', wall: ['#2c2c33', '#1e1e25', '#111116'] },
+  { n: 'Légendes', at: 60000000, m: 65, d: 'Diamants partout, jusque dans le sourire.', wall: ['#3d2f12', '#261c0a', '#120c03'] },
 ];
 // Un client plus riche est plus exigeant : plus de travail (et autant d'expérience en plus).
 // Sans cela, en fin de partie, chaque client partirait en un clic.
@@ -209,8 +214,10 @@ try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch { /
 const save = () => { if (simT !== null || (X.noSave && X.noSave())) return; S.last = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
 
 const lvl = (id) => S.tools[id] || 0;
-const power = () => 1 + lvl('ciseaux') + 4 * lvl('tondeuse');
-const autoRate = () => 2 * lvl('apprenti');
+const mile = (id) => { let m = 1; for (const x of MILE) if (lvl(id) >= x) m *= 2; return m; };
+const power = () => (1 + lvl('ciseaux') * mile('ciseaux') + 4 * lvl('tondeuse') * mile('tondeuse')) * (X.powerMult ? X.powerMult() : 1);
+const critChance = () => 0.06 + 0.02 * lvl('precision') + (X.crit ? X.crit() : 0);
+const autoRate = () => 2 * lvl('apprenti') * mile('apprenti');
 const mult = () => (1 + 0.1 * lvl('lotion') + 0.02 * S.cuts.length) * (X.mult ? X.mult() : 1);
 const TIER_GROW = 5; // dans chaque nouvelle ville (franchise), les seuils des univers sont multipliés par 5
 const tierAt = (i) => TIERS[i].at * Math.pow(TIER_GROW, S.pres || 0);
@@ -218,22 +225,31 @@ const runTotal = () => S.total - (S.base || 0); // gains depuis l'ouverture du s
 const toolCost = (t) => Math.floor(t.base * Math.pow(t.g, lvl(t.id)));
 const svcOf = (id) => SERVICES.find((s) => s.id === id);
 const tierNow = () => { let i = 0; while (i < TIERS.length - 1 && runTotal() >= tierAt(i + 1)) i++; return i; };
+// Position « continue » dans les univers : 2,4 = à 40 % du chemin entre Affaires et Créateurs. Au-delà de Légendes, ça continue.
+const TIER_M = TIERS.map((t) => t.m);
+function tierFrac() {
+  const tn = tierNow(), r = runTotal();
+  if (tn >= TIERS.length - 1) return tn + Math.log(Math.max(1, r / tierAt(tn))) / Math.log(13);
+  const a = tn ? tierAt(tn) : tierAt(1) / 12, b = tierAt(tn + 1);
+  return tn + Math.max(0, Math.min(1, Math.log(Math.max(a, r) / a) / Math.log(b / a)));
+}
+function lerpTier(arr, f) { const i = Math.min(arr.length - 2, Math.floor(f)); return arr[i] * Math.pow(arr[i + 1] / arr[i], f - i); }
 const seatPeriod = () => SEAT_TIME * Math.pow(0.9, lvl('formation'));
 const seatPay = () => { // un fauteuil d'équipe encaisse la moyenne de la carte débloquée
   const own = SERVICES.filter((s) => S.svc.includes(s.id));
-  return Math.max(1, Math.round(own.reduce((a, s) => a + s.price, 0) / own.length * mult() * TIERS[tierNow()].m * 0.6));
+  return Math.max(1, Math.round(own.reduce((a, s) => a + s.price, 0) / own.length * mult() * lerpTier(TIER_M, tierFrac()) * 0.5));
 };
-const offerChance = () => 0.06 + 0.015 * lvl('presentoir');
+const offerChance = () => 0.06 + 0.015 * lvl('presentoir') + (X.offer ? X.offer() : 0);
 function earn(x) { S.money += x; S.total += x; }
 /* ---------- Défis ---------- */
 const bump = (k) => { S.stat[k] = (S.stat[k] || 0) + 1; };
 const misProg = (m) => Math.max(0, Math.min(m.n, (S.stat[MISSIONS[m.m].k] || 0) - m.from));
-const misReward = () => seatPay() * 6;
+const misReward = () => seatPay() * 10;
 function newMission() {
   const used = S.mis.map((m) => m.m);
   let i;
   do { i = rnd(MISSIONS.length); } while (used.includes(i) || (MISSIONS[i].k === 'stars' && tierNow() < 1));
-  return { m: i, n: MISSIONS[i].n[rnd(MISSIONS[i].n.length)], from: S.stat[MISSIONS[i].k] || 0 };
+  return { m: i, n: Math.round(MISSIONS[i].n[rnd(MISSIONS[i].n.length)] * (X.misScale ? X.misScale(MISSIONS[i].k) : 1)), from: S.stat[MISSIONS[i].k] || 0 };
 }
 let simT = null; // horloge simulée (tests d'équilibrage) ; null = temps réel
 const nowMs = () => (simT === null ? performance.now() : simT);
@@ -332,16 +348,16 @@ function checkTier() {
 let offer = null, offerTimer = 0;
 function showOffer(c) {
   const p = PRODUCTS[rnd(PRODUCTS.length)];
-  offer = { n: p[0], p: Math.round(p[1] * TIERS[c.tier || 0].m), c: S.served };
+  offer = { n: p[0], p: Math.round(p[1] * TIERS[c.tier || 0].m), c: S.served, t: Date.now() };
   const el = $('offer');
   el.innerHTML = `<small>Le client hésite…</small><b>${offer.n}</b><span>Vendre · ${offer.p} Ŧ</span>`;
-  el.style.left = (8 + rnd(38)) + '%'; el.style.top = (22 + rnd(30)) + '%';
+  el.style.left = '4%'; el.style.top = '46%'; // toujours au même endroit, hors des messages et de la tête
   el.hidden = false;
   clearTimeout(offerTimer);
-  offerTimer = setTimeout(() => { el.hidden = true; offer = null; }, 4500);
+  offerTimer = setTimeout(() => { el.hidden = true; offer = null; }, 6500);
 }
 function sellOffer() {
-  if (!offer) return;
+  if (!offer || Date.now() - offer.t < 350) return; // un clic lancé avant l'apparition ne compte pas
   earn(offer.p);
   S.sales.unshift({ t: Date.now(), n: offer.n, p: offer.p, c: offer.c });
   S.sales.length = Math.min(S.sales.length, 40);
@@ -379,12 +395,13 @@ function newClient() {
   }
   const tier = star < 0 && tn && Math.random() < 0.3 ? rnd(tn) : tn;
   const sd = star >= 0 ? STARS[star] : {};
+  const tf = tier === tn ? tierFrac() : tier, ease = S.served < 4 ? [0.12, 0.25, 0.45, 0.7][S.served] : 1; // les premiers clients sont rapides : on apprend en jouant
   S.client = {
     ...(star >= 0 ? { star, look: sd.look, col: sd.col, jw: sd.jw || 0, grillz: !!sd.grillz } : {}),
-    tier, xp: Math.round((20 + svc.min) * TIER_XP[tier]), fit: rnd(4), wash: S.served === 0 || Math.random() < 0.6,
+    tier, pm: lerpTier(TIER_M, tf), xp: Math.round((20 + svc.min) * lerpTier(TIER_XP, tf) * XP_K), fit: rnd(4), wash: S.served === 0 || Math.random() < 0.6,
     svc: svc.id, cut, skin: sd.skin !== undefined ? sd.skin : rnd(N_SKIN), hair: sd.hair !== undefined ? sd.hair : rnd(N_HAIR), eye: rnd(EYES.length), seed: rnd(1e9),
     b0: hasBeard ? 3 : stubble, b1: hasBeard ? svc.beard : stubble,
-    need: Math.round((20 + svc.min) * TIER_WORK[tier]), vip: Math.random() < 0.05 * lvl('bouche'),
+    need: Math.round((20 + svc.min) * lerpTier(TIER_WORK, tf) * NEED_K * ease), vip: Math.random() < 0.05 * lvl('bouche'),
   };
   if (X.newClient) X.newClient(S.client, svc);
   S.work = 0;
@@ -403,7 +420,7 @@ function setupClient() {
 function finishClient(tip) {
   const c = S.client, svc = svcOf(c.svc);
   const isStar = c.star !== undefined && STARS[c.star];
-  const pay = Math.round(svc.price * mult() * TIERS[c.tier || 0].m * (c.vip ? 3 : 1) * (isStar ? rarOf(isStar)[1] : 1) * (tip || 1) * (X.payMult ? X.payMult() : 1));
+  const pay = Math.round(PAY_K * svc.price * mult() * (c.pm || TIERS[c.tier || 0].m) * (c.vip ? 3 : 1) * (isStar ? rarOf(isStar)[1] : 1) * (tip || 1) * (X.payMult ? X.payMult() : 1));
   const before = levelInfo().l;
   earn(pay); S.served++; S.xp += c.xp || c.need;
   bump('served');
@@ -1093,7 +1110,7 @@ function buildBg() {
   if (X.wall) X.wall(g);
   // logo du salon au mur, bords fondus
   if (logoImg.complete && logoImg.naturalWidth) {
-    const lw = 250, lh = lw * logoImg.naturalHeight / logoImg.naturalWidth, lx = CX - lw / 2, ly = -14;
+    const lw = 190, lh = lw * logoImg.naturalHeight / logoImg.naturalWidth, lx = CX - lw / 2, ly = 30; // sous le bandeau des coordonnées
     scratch.width = Math.ceil(lw * k); scratch.height = Math.ceil(lh * k);
     const h = scratch.getContext('2d');
     h.drawImage(logoImg, 0, 0, scratch.width, scratch.height);
@@ -1182,7 +1199,14 @@ function drawHand(g, h, tool, soapy) {
     g.fillStyle = '#fff3c4'; g.beginPath(); g.arc(PIV - 0.8, -0.8, 1, 0, 7); g.fill();
     g.restore();
     return;
-  } else if (tool === 'clipper') {
+  }
+  { // paume, derrière l'outil
+    const pg = g.createRadialGradient(-3, -4, 2, 0, 0, 20);
+    pg.addColorStop(0, sk[1]); pg.addColorStop(1, sk[0]);
+    g.fillStyle = pg; g.beginPath(); g.ellipse(0, 1, 16, 14, 0, 0, 7); g.fill();
+    g.strokeStyle = sk[2]; g.lineWidth = 1; g.stroke();
+  }
+  if (tool === 'clipper') {
     const gr = g.createLinearGradient(0, -13, 0, 13);
     gr.addColorStop(0, '#45413c'); gr.addColorStop(1, '#141210');
     g.fillStyle = gr; rr(g, -12, -13, 62, 26, 10); g.fill();
@@ -1209,18 +1233,15 @@ function drawHand(g, h, tool, soapy) {
     g.fillStyle = '#f5ecdc'; rr(g, 46, -7, 17, 14, 6); g.fill();
     g.fillStyle = '#d5ecd0'; rr(g, 56, -7, 7, 14, 5); g.fill();
   }
-  // main
-  let gr = g.createRadialGradient(-3, -4, 2, 0, 0, 20);
-  gr.addColorStop(0, sk[1]); gr.addColorStop(1, sk[0]);
-  g.fillStyle = gr; g.beginPath(); g.ellipse(0, 1, 16, 14, 0, 0, 7); g.fill();
-  g.strokeStyle = sk[2]; g.lineWidth = 1; g.stroke();
+  // doigts (la paume est dessinée avant l'outil, voir plus haut)
+  const grip = tool !== 'none';
   g.fillStyle = sk[0];
   for (let i = 0; i < 4; i++) {
     const wig = tool === 'none' ? Math.sin(time * 14 + i) * 3 : 0;
-    rr(g, 7, -13 + i * 7, 15 + (i === 1 || i === 2 ? 3 : 0) + (tool === 'none' ? 8 + wig : 0), 6.2, 3); g.fill();
+    rr(g, grip ? 4 : 7, -13 + i * 7, grip ? 11 : 15 + (i === 1 || i === 2 ? 3 : 0) + 8 + wig, 6.2, 3); g.fill();
   }
   g.strokeStyle = sk[2]; g.lineWidth = 1;
-  for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(9, -13.4 + i * 7); g.lineTo(21, -13.4 + i * 7); g.stroke(); }
+  for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(grip ? 5 : 9, -13.4 + i * 7); g.lineTo(grip ? 14 : 21, -13.4 + i * 7); g.stroke(); }
   g.fillStyle = sk[1]; g.beginPath(); g.ellipse(2, -14, 6, 9.5, 0.9, 0, 7); g.fill();
   if (soapy) { // mains pleines de mousse
     g.fillStyle = 'rgba(255,255,255,.95)';
@@ -1485,7 +1506,7 @@ document.querySelectorAll('#tabs button').forEach((b) => { tabBtn[b.dataset.tab]
 function resize() {
   const r = stage.getBoundingClientRect();
   if (!r.width || !r.height) return;
-  dpr = Math.min(2, window.devicePixelRatio || 1);
+  dpr = Math.min(X.dprCap || 2, window.devicePixelRatio || 1); // la finesse baisse toute seule sur un téléphone lent
   cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
   k = Math.min(cv.width / V.w, cv.height / V.h);
   ox = (cv.width - V.w * k) / 2; oy = cv.height - V.h * k;
@@ -1495,14 +1516,16 @@ function resize() {
 
 function tapAt(vx, vy) {
   const now = nowMs();
-  combo = now - lastTap < 450 ? Math.min(combo + 1, 40) : Math.max(0, combo - 6);
+  combo = now - lastTap < (S.kid ? 950 : 620) ? Math.min(combo + 1, 40) : Math.max(0, combo - 3);
   lastTap = now;
-  const crit = Math.random() < 0.06;
+  const crit = Math.random() < critChance();
+  const off = phase === 'cut' && X.offTarget ? X.offTarget(vx, vy) : false; // clic à côté du client
   if (combo >= 40 && fever <= 0) { // rythme au maximum : Turbo
     fever = FEVER; bump('turbo'); sfx('level');
     floatText('TURBO x2 !', 180, 92, 'step'); cash(14, CX, 200);
   }
-  const gain = power() * (1 + combo / 40) * (crit ? 5 : 1) * (fever > 0 ? 2 : 1) * (X.workMult ? X.workMult() : 1);
+  const gain = power() * (1 + combo / 40) * (crit ? 5 : 1) * (fever > 0 ? 2 : 1) * (X.workMult ? X.workMult() : 1) * (off ? 0.4 : 1);
+  if (X.tap) X.tap(vx, vy, crit, off);
   bump('taps'); if (crit) bump('crits');
   $('hint').hidden = true;
 
@@ -1530,7 +1553,7 @@ function tapAt(vx, vy) {
 }
 
 stage.addEventListener('pointerdown', (e) => {
-  if (e.target.closest('#rdv, #info')) return; // liens vers le salon : ce ne sont pas des clics de jeu
+  if (e.target.closest('#rdv, #info, #golden')) return; // liens vers le salon : ce ne sont pas des clics de jeu
   e.preventDefault();
   if (e.target.closest('#offer')) { sellOffer(); return; }
   if (phase === 'mini') { if (X.miniTap) X.miniTap(toV(e), e); return; }
@@ -1540,7 +1563,7 @@ stage.addEventListener('pointerdown', (e) => {
 // Clic maintenu : tant que le doigt reste posé, l'outil « Clic maintenu » clique tout seul
 const toV = (e) => { const r = cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) * dpr - ox) / k, y: ((e.clientY - r.top) * dpr - oy) / k }; };
 stage.addEventListener('pointermove', (e) => { if (hold) hold = toV(e); if (phase === 'mini' && X.miniMove) X.miniMove(toV(e)); });
-for (const ev of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(ev, () => { hold = null; });
+for (const ev of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(ev, () => { if (X.release) X.release(); hold = null; });
 stage.addEventListener('contextmenu', (e) => e.preventDefault());
 
 function floatText(txt, vx, vy, cls) {
@@ -1551,7 +1574,7 @@ function floatText(txt, vx, vy, cls) {
   el.style.top = (oy + vy * k) / dpr + 'px';
   $('floats').appendChild(el);
   el.addEventListener('animationend', () => el.remove());
-  if ($('floats').childElementCount > 22) $('floats').firstChild.remove();
+  if ($('floats').childElementCount > 9) $('floats').firstChild.remove(); // jamais plus de 9 chiffres à l'écran
 }
 
 function toast(html) {
@@ -1574,7 +1597,7 @@ $('modal-ok').addEventListener('click', () => {
 });
 
 /* ---------- Pseudo et classement partagé (fonction Netlify /api/scores) ---------- */
-const API = '/api/scores', SEASON = 's1'; // changer SEASON remet le classement à zéro (nouveau concours)
+const API = '/api/scores', SEASON = 's2'; // changer SEASON remet le classement à zéro (nouveau concours)
 let lastPush = -1;
 const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const cleanName = (s) => String(s || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
@@ -1885,4 +1908,4 @@ if (!S.client || !svcOf(S.client.svc) || !CUTS[S.client.cut]) newClient(); else 
 renderPanel();
 renderCombo();
 requestAnimationFrame(loop);
-if (!S.name && !S.served) askName(); // première visite : on propose un pseudo pour le classement
+// Le pseudo est demandé après quelques clients (v10.js) : on joue d'abord.

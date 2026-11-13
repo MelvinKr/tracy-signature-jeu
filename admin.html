@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Signature Cut – page de Tracy</title>
+  <style>
+    :root { --bg: #1c1a17; --card: #2f2b26; --line: #45403a; --text: #f4ecdc; --muted: #a89d8b; --gold: #d9b85f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; }
+    h1 { font-size: 22px; color: var(--gold); margin: 0 0 4px; }
+    h2 { font-size: 16px; color: var(--gold); margin: 22px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+    section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+    input, button { font: inherit; border-radius: 10px; border: 1px solid var(--line); padding: 9px 12px; }
+    input { background: #1c1a17; color: var(--text); min-width: 0; }
+    button { background: var(--gold); color: #1c1a17; font-weight: 700; border: 0; cursor: pointer; }
+    button.sm { padding: 4px 9px; font-size: 13px; background: #5a2a2a; color: #ffd9d9; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    td, th { padding: 6px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+    td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .codes { display: flex; flex-wrap: wrap; gap: 6px; font-family: ui-monospace, monospace; font-size: 15px; }
+    .codes span { padding: 4px 8px; border: 1px dashed var(--gold); border-radius: 8px; }
+    .scroll { max-height: 340px; overflow: auto; }
+    #msg { color: #ffb347; min-height: 1.4em; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Signature Cut by Tracy – tableau de bord du jeu</h1>
+  <p class="muted">Page réservée au salon. Le mot de passe est celui réglé dans Netlify (variable <code>ADMIN_KEY</code>).</p>
+  <section id="login">
+    <div class="row"><input id="key" type="password" placeholder="Mot de passe" autocomplete="current-password"><button id="go" type="button">Ouvrir</button></div>
+    <p id="msg"></p>
+  </section>
+  <div id="app" hidden>
+    <h2>Fréquentation (30 derniers jours)</h2>
+    <section><div class="scroll"><table id="stats"></table></div>
+      <p class="muted">Compteurs anonymes. « Visites » : un appareil compte une fois par jour. « RDV » : clics vers Planity. Deux clics au même instant peuvent n'en compter qu'un.</p></section>
+    <h2>Mot de la semaine</h2>
+    <section><div class="row"><input id="word" maxlength="16" placeholder="Ex. PEIGNE"><button id="word-ok" type="button">Enregistrer</button></div>
+      <p class="muted">À afficher au salon. Les joueurs le saisissent dans l'onglet Infos pour un bonus (une fois par mot). Lettres et chiffres uniquement, sans accent.</p></section>
+    <h2>Tampons de fidélité</h2>
+    <section><div class="row"><input id="nst" type="number" min="1" max="50" value="10" style="width:90px"><button id="st-ok" type="button">Créer des codes</button><span class="muted" id="st-info"></span></div>
+      <p class="muted">Un code = un tampon, utilisable une seule fois. À donner au client après son rendez-vous.</p>
+      <div class="codes" id="codes"></div></section>
+    <h2>Classement <span class="muted" id="season"></span></h2>
+    <section><div class="row" style="margin-bottom:8px"><button type="button" data-s="s1">Général</button><button type="button" data-s="s1-chrono">Chrono</button></div>
+      <div class="scroll"><table id="board"></table></div>
+      <p class="muted">« Retirer » supprime le joueur du classement et l'empêche de s'y réinscrire avec cet appareil.</p></section>
+    <h2>Parrainages</h2>
+    <section><table id="refs"></table></section>
+  </div>
+</main>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let key = sessionStorage.getItem('tsj-admin') || '', season = 's1';
+async function call(body) {
+  $('msg').textContent = '';
+  let r;
+  try { r = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': key }, body: JSON.stringify({ season, ...body }) }); }
+  catch { $('msg').textContent = 'Pas de connexion.'; return null; }
+  if (r.status === 503) { $('msg').textContent = 'La variable ADMIN_KEY n\'est pas encore réglée dans Netlify.'; return null; }
+  if (r.status === 401) { $('msg').textContent = 'Mot de passe incorrect.'; sessionStorage.removeItem('tsj-admin'); $('login').hidden = false; $('app').hidden = true; return null; }
+  if (!r.ok) { $('msg').textContent = 'Erreur ' + r.status; return null; }
+  return r.json();
+}
+function render(d) {
+  if (!d) return;
+  if (d.codes) { $('codes').innerHTML = d.codes.map((c) => `<span>${esc(c)}</span>`).join(''); return load(); }
+  $('login').hidden = true; $('app').hidden = false; sessionStorage.setItem('tsj-admin', key);
+  const days = Object.keys(d.stats).sort().reverse().slice(0, 30), cols = [['visit', 'Visites'], ['new', 'Nouveaux'], ['rdv', 'RDV'], ['tel', 'Tél.'], ['map', 'Plan'], ['share', 'Partages'], ['chrono', 'Chronos'], ['ref', 'Filleuls']];
+  $('stats').innerHTML = '<tr><th>Jour</th>' + cols.map((c) => `<th class="n">${c[1]}</th>`).join('') + '</tr>' +
+    (days.length ? days.map((k) => `<tr><td>${esc(k.split('-').reverse().join('/'))}</td>` + cols.map((c) => `<td class="n">${d.stats[k][c[0]] || 0}</td>`).join('') + '</tr>').join('') : '<tr><td colspan="9" class="muted">Aucune donnée pour l\'instant.</td></tr>');
+  $('word').value = d.word || '';
+  $('st-info').textContent = `${d.stamps.used} utilisé(s) sur ${d.stamps.total} créé(s)`;
+  if (!$('codes').innerHTML && d.stamps.free.length) $('codes').innerHTML = d.stamps.free.map((c) => `<span>${esc(c)}</span>`).join('');
+  $('season').textContent = '· ' + (d.season === 's1' ? 'général' : d.season) + ' · ' + d.board.length + ' joueur(s)';
+  $('board').innerHTML = d.board.length ? d.board.map((e, i) => `<tr><td>${i + 1}</td><td>${esc(e.n)} <span class="muted">${esc(e.ti)}</span></td><td class="n">${Math.floor(e.s).toLocaleString('fr-FR')}</td><td class="n">niv. ${e.l}</td><td class="n"><button class="sm" type="button" data-rm="${esc(e.id)}" data-n="${esc(e.n)}">Retirer</button></td></tr>`).join('') : '<tr><td class="muted">Personne pour l\'instant.</td></tr>';
+  $('refs').innerHTML = d.refs.length ? '<tr><th>Code du parrain</th><th class="n">Filleuls</th></tr>' + d.refs.map((r) => `<tr><td>${esc(r.code)}</td><td class="n">${r.n}</td></tr>`).join('') : '<tr><td class="muted">Aucun parrainage pour l\'instant.</td></tr>';
+}
+const load = async () => render(await call({ a: 'summary' }));
+$('go').addEventListener('click', () => { key = $('key').value; load(); });
+$('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('go').click(); });
+$('word-ok').addEventListener('click', async () => render(await call({ a: 'word', word: $('word').value })));
+$('st-ok').addEventListener('click', async () => { $('codes').innerHTML = ''; render(await call({ a: 'stamps', n: +$('nst').value })); });
+document.addEventListener('click', async (e) => {
+  const s = e.target.closest('[data-s]'), rm = e.target.closest('[data-rm]');
+  if (s) { season = s.dataset.s; load(); }
+  else if (rm && confirm(`Retirer « ${rm.dataset.n} » du classement ? Il ne pourra pas se réinscrire.`)) render(await call({ a: 'remove', id: rm.dataset.rm }));
+});
+if (key) load();
+</script>
+</body>
+</html>

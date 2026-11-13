@@ -420,3 +420,37 @@ button.cta.ghost { background: none; border: 1px solid var(--gold); color: var(-
 .ic.mq.buy { border-color: var(--ok); background: linear-gradient(0deg, rgba(127,199,154,.3), rgba(127,199,154,.3)), var(--card); }#toast:not(.on) { transform: translateY(-300%); }
 #order .bar { overflow: visible; margin-top: 9px; } #order .bar > i { border-radius: inherit; }
 #ticks em { font-size: 15px; }.lvreal img { object-position: 88% 50%; }
+
+/* ---------- V9 : icônes maison, Chrono, parrainage, codes, mode enfant, tenue ---------- */
+.gi { width: 36px; height: 36px; display: block; fill: none; stroke: #f3dc98; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.gi .a { fill: rgba(243,220,152,.26); stroke: none; } .gi .f { fill: #f3dc98; stroke: none; }
+.ic .em { display: grid; place-items: center; min-height: 38px; }
+.ic.buy:disabled .gi { stroke: #8d8474; } .ic.buy:disabled .gi .a { fill: rgba(141,132,116,.2); } .ic.buy:disabled .gi .f { fill: #8d8474; }
+.ic.done .gi { stroke: #a8e0bd; } .ic.done .gi .a { fill: rgba(127,199,154,.25); } .ic.done .gi .f { fill: #a8e0bd; }
+.ic .lv .gi { width: 12px; height: 12px; margin: 3px auto 0; stroke-width: 2.2; }
+.ic .ft .gi { width: 18px; height: 18px; }
+#tabs button span .gi { width: 22px; height: 22px; stroke-width: 1.7; }
+#tabs button.on .gi { stroke: #2a2109; } #tabs button.on .gi .a { fill: rgba(42,33,9,.25); }
+#ticks em .gi { width: 17px; height: 17px; stroke: #fff; stroke-width: 2; filter: drop-shadow(0 0 2px #000); } #ticks em .gi .a { fill: rgba(0,0,0,.35); }
+.trophies div .gi { width: 26px; height: 26px; margin: 0 auto; }
+.icg.sm { grid-template-columns: repeat(6, 1fr); gap: 6px; } .icg.sm .ic { min-height: 62px; padding: 6px 0 4px; } .icg.sm .ic .em { min-height: 28px; } .icg.sm .ft { font-size: 10.5px; }
+.swt { display: block; width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); box-shadow: 0 2px 4px rgba(0,0,0,.4); }
+.ic.sel { border-color: var(--gold2) !important; box-shadow: 0 0 0 2px rgba(243,220,152,.45) !important; }
+#chrono { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: rgba(20,18,15,.92); border: 2px solid var(--gold); color: var(--gold2); font-weight: 700; z-index: 4; pointer-events: none; }
+#chrono[hidden] { display: none; }
+#chrono .gi { width: 22px; height: 22px; } #chrono b { font-size: 20px; min-width: 46px; } #chrono span { font-size: 14px; color: var(--text); }
+#chrono.end { border-color: #ff5e62; animation: coachon .5s linear infinite; } #chrono.end b { color: #ff8f91; }
+.box { margin: 0 0 12px; padding: 4px 12px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.box h2 { margin-top: 10px; }
+.coderow { display: flex; gap: 8px; } .coderow .field { flex: 1; min-width: 0; margin: 0; text-transform: uppercase; }
+.stamps { display: flex; gap: 8px; justify-content: center; margin: 10px 0 6px; }
+.stamps span { width: 42px; height: 42px; display: grid; place-items: center; border: 2px dashed var(--line); border-radius: 50%; opacity: .45; }
+.stamps span.on { border: 2px solid var(--gold); background: rgba(217,184,95,.2); opacity: 1; }
+.stamps .gi { width: 22px; height: 22px; }
+.sw { display: block; padding: 7px 0; font-size: 14.5px; } .sw input { width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; accent-color: #d9b85f; } .sw small { display: block; margin-left: 28px; color: var(--muted); font-size: 12px; }
+.rowbtn { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 2px 0; }
+.bacard { width: 100%; border-radius: 12px; display: block; margin: 4px 0 2px; }
+button.rdvbtn { width: 100%; border: 0; font-family: inherit; cursor: pointer; }
+body.kid #info, body.kid #rdv, body.kid .rdvbtn, body.kid .hintline, body.kid .statline, body.kid #gift, body.kid .order-sub, body.kid #event span { display: none; }
+body.kid #toast { font-size: 0; } body.kid #toast b { font-size: 16px; }
+body.kid .ic .em .gi { width: 42px; height: 42px; }

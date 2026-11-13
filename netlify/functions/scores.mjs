@@ -33,6 +33,8 @@ export default async (req) => {
     try { b = await req.json(); } catch { return Response.json({ error: 'json' }, { status: 400 }); }
     id = String(b.id || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 40);
     const name = clean(b.name), score = Math.floor(Number(b.score)), level = Math.floor(Number(b.level)) || 1;
+    const ban = (await getStore({ name: 'game', consistency: 'strong' }).get('ban', { type: 'json' })) || {}; // pseudos retirés par le salon
+    if (ban[id]) return Response.json({ error: 'banned' }, { status: 403 });
     if (id.length < 8 || name.length < 2 || !Number.isFinite(score) || score < 0 || score > MAX_SCORE) {
       return Response.json({ error: 'invalid' }, { status: 400 });
     }

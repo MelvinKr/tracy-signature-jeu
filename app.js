@@ -111,6 +111,7 @@ const STARS = [
   { r: 3, n: 'Nébula', d: 'Une galaxie entière sous la peau.', at: 4, look: 4, col: '#141a40', skin: 9, hair: 12, acc: ['galaxy'] },
   { r: 3, n: 'Le Phénix', d: 'Ses cheveux repoussent en flammes à chaque coupe.', at: 4, look: 3, col: '#5a1a0a', skin: 2, hair: 16, acc: ['flames'] },
   { r: 3, n: 'Le Client en or massif', d: 'Tout ce qu\'il touche se transforme en pourboire.', at: 5, look: 5, col: '#c9a23a', skin: 8, hair: 20, jw: 5, grillz: true, acc: ['gold'] },
+  { r: 2, n: 'L\'Ami du salon', d: 'Il connaît le mot de passe : on ne le croise que chez les vrais habitués.', at: 0, look: 5, col: '#d9b85f', jw: 4, lock: true, acc: ['shades'] },
 ];
 const STAR_PAY = 4; // une personnalité Rare paie x4
 // Raretés des personnalités : [nom, paiement, poids de tirage]
@@ -205,7 +206,7 @@ const KEY = 'tsj-v2';
 const fresh = () => ({ money: 0, total: 0, served: 0, xp: 0, playSec: 0, tools: {}, svc: ['simple'], cuts: [], client: null, work: 0, code: '', sound: true, music: true, tier: 0, seats: 0, sales: [], salesN: 0, salesSum: 0, stars: [], stat: {}, mis: [], name: '', pid: '', dyes: [], colbar: 0, tuto: 0, base: 0, pres: 0, staff: [], deco: [], troph: [], day: '', streak: 0, spin: '', last: 0 });
 let S = fresh();
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch { /* stockage indisponible */ }
-const save = () => { if (simT !== null) return; S.last = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
+const save = () => { if (simT !== null || (X.noSave && X.noSave())) return; S.last = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* rien */ } };
 
 const lvl = (id) => S.tools[id] || 0;
 const power = () => 1 + lvl('ciseaux') + 4 * lvl('tondeuse');
@@ -370,7 +371,7 @@ function newClient() {
   let star = -1; // de temps en temps, une personnalité pousse la porte (de préférence une nouvelle)
   if (S.served >= 3 && ((X.forceStar && X.forceStar()) || Math.random() < 0.08)) {
     const pool = [];
-    STARS.forEach((s, i) => { if (s.at <= tn && (!s.noel || X.noel)) pool.push(i); });
+    STARS.forEach((s, i) => { if (s.at <= tn && (!s.noel || X.noel) && (!s.lock || (S.words && S.words.length))) pool.push(i); });
     let tot = 0; // tirage pondéré par la rareté ; une personnalité pas encore vue compte double
     const w = pool.map((i) => { const x = rarOf(STARS[i])[2] * (S.stars.includes(i) ? 1 : 2); tot += x; return x; });
     let roll = Math.random() * tot;
@@ -1142,13 +1143,13 @@ function handTools(st) {
 }
 
 function drawHand(g, h, tool, soapy) {
-  const sk = SKINS[1];
+  const of = X.outfit ? X.outfit() : { skin: 1, sleeve: '#141210', metal: '#d9b85f' }, sk = SKINS[of.skin];
   const ax = h.side < 0 ? -40 : 400, ay = 480, wx = h.x + h.side * 14, wy = h.y + 12;
   g.lineCap = 'round';
-  g.strokeStyle = '#141210'; g.lineWidth = 34; g.beginPath(); g.moveTo(ax, ay); g.lineTo(wx, wy); g.stroke();
+  g.strokeStyle = of.sleeve; g.lineWidth = 34; g.beginPath(); g.moveTo(ax, ay); g.lineTo(wx, wy); g.stroke();
   g.strokeStyle = 'rgba(255,255,255,.06)'; g.lineWidth = 10; g.beginPath(); g.moveTo(ax, ay - 8); g.lineTo(wx, wy - 8); g.stroke();
   const t = 0.9;
-  g.strokeStyle = '#d9b85f'; g.lineWidth = 35; g.lineCap = 'butt';
+  g.strokeStyle = of.metal; g.lineWidth = 35; g.lineCap = 'butt';
   g.beginPath(); g.moveTo(ax + (wx - ax) * (t - 0.035), ay + (wy - ay) * (t - 0.035)); g.lineTo(ax + (wx - ax) * t, ay + (wy - ay) * t); g.stroke();
 
   g.save(); g.translate(h.x, h.y); g.scale(-h.side, 1); g.rotate(-0.22);
@@ -1171,7 +1172,7 @@ function drawHand(g, h, tool, soapy) {
       gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#9ea3ad');
       g.fillStyle = gr; g.strokeStyle = '#6f747d'; g.lineWidth = 0.8;
       g.beginPath(); g.moveTo(-6, -3.4 * s); g.lineTo(54, 0); g.lineTo(-6, 2.4 * s); g.closePath(); g.fill(); g.stroke();
-      g.strokeStyle = '#d9b85f'; g.lineWidth = 4.5;
+      g.strokeStyle = of.metal; g.lineWidth = 4.5;
       g.beginPath(); g.moveTo(-4, 0); g.lineTo(-16, -s * 7); g.stroke();
       g.beginPath(); g.ellipse(-24, -s * 12, 9, 7.5, -s * 0.5, 0, 7); g.stroke();
       g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(-24, -s * 12, 9, 7.5, -s * 0.5, 3.4, 4.6); g.stroke();
@@ -1377,7 +1378,8 @@ function draw() {
 
 let last = performance.now();
 function loop(now) {
-  frame(Math.min(0.05, (now - last) / 1000));
+  // dt jamais négatif (retour d'onglet), et une erreur de dessin ne doit jamais arrêter la boucle du jeu
+  try { frame(Math.max(0, Math.min(0.05, (now - last) / 1000))); } catch (err) { if (!loop.warned) { loop.warned = true; console.error(err); } }
   last = now;
   requestAnimationFrame(loop);
 }
@@ -1448,22 +1450,25 @@ function musicStop() {
   musicGain.gain.setTargetAtTime(0, AC.currentTime, 0.08);
 }
 function musicTick() {
-  const d16 = 60 / BPM / 4;
+  const tn = S.tier || 0, tr = [0, 2, -2, 3, 5, -3][tn] || 0; // chaque univers a son tempo et sa tonalité
+  const d16 = 60 / (BPM + tn * 5) / 4;
   if (nextT < AC.currentTime) nextT = AC.currentTime + 0.05; // retour d'onglet : on repart proprement
   while (nextT < AC.currentTime + 0.35) {
     const b = beat16 & 15, ch = CHORDS[(beat16 >> 4) & 3], t = nextT + (b & 1 ? 0.02 : 0);
     if (b === 0) for (const n of ch) { // nappe
       const o = AC.createOscillator(), g = AC.createGain();
-      o.type = 'triangle'; o.frequency.value = mtof(n); o.detune.value = (n % 3 - 1) * 7;
+      o.type = 'triangle'; o.frequency.value = mtof(n + tr); o.detune.value = (n % 3 - 1) * 7;
       o.connect(g); g.connect(padFilter);
       g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.045, t + 0.35); g.gain.linearRampToValueAtTime(0.0001, t + d16 * 16);
       o.start(t); o.stop(t + d16 * 16 + 0.05);
     }
-    if (b === 0 || b === 6 || b === 10) tone(mtof(ch[0] - 24), t, 0.32, 0.2, 'sine', musicGain);       // basse
+    if (b === 0 || b === 6 || b === 10) tone(mtof(ch[0] - 24 + tr), t, 0.32, 0.2, 'sine', musicGain);       // basse
     if (b === 0 || b === 7 || b === 10) tone(125, t, 0.16, 0.3, 'sine', musicGain, 42);                // grosse caisse
     if (b === 4 || b === 12) noise(t, 0.11, 0.07, 'bandpass', 1900, musicGain);                        // caisse claire
     if (!(b & 1)) noise(t, 0.035, b % 4 === 2 ? 0.035 : 0.02, 'highpass', 7500, musicGain);            // charleston
-    if ((b === 2 || b === 5 || b === 9 || b === 14) && Math.random() < 0.4 + 0.06 * (S.tier || 0)) tone(mtof(LEAD[rnd(LEAD.length)]), t, 0.5, 0.05, 'sine', musicGain); // mélodie
+    if ((b === 2 || b === 5 || b === 9 || b === 14) && Math.random() < 0.4 + 0.06 * (S.tier || 0)) tone(mtof(LEAD[rnd(LEAD.length)] + tr), t, 0.5, 0.05, 'sine', musicGain); // mélodie
+    if (tn >= 2 && b % 4 === 3) tone(mtof(ch[(b >> 2) % 4] + 12 + tr), t, 0.16, 0.03, 'triangle', musicGain); // arpège dès l'univers Affaires
+    if (tn >= 4 && b === 8) tone(mtof(ch[2] + 24 + tr), t, 0.9, 0.025, 'sine', musicGain);                    // cloche des univers Stars et Légendes
     nextT += d16; beat16 = (beat16 + 1) & 63;
   }
 }
@@ -1559,6 +1564,7 @@ function toast(html) {
 
 let modalOk = null; // action du bouton de la fenêtre ; renvoyer false la laisse ouverte
 function modal(html, onOk, label) {
+  if (X.noModal && X.noModal(html)) return; // mode Chrono : aucune fenêtre ne coupe la partie
   $('modal-body').innerHTML = html; $('modal-ok').textContent = label || 'Continuer';
   modalOk = onOk || null; $('modal').hidden = false;
 }
@@ -1573,7 +1579,7 @@ let lastPush = -1;
 const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const cleanName = (s) => String(s || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
 async function pushScore() {
-  if (!S.name || simT !== null || Math.floor(S.total) === lastPush) return null;
+  if (!S.name || simT !== null || (X.noSave && X.noSave()) || Math.floor(S.total) === lastPush) return null;
   if (!S.pid) S.pid = (crypto.randomUUID ? crypto.randomUUID() : 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
   const sent = Math.floor(S.total);
   try {
@@ -1593,7 +1599,9 @@ function askName(then) {
     if (then) { then(); return false; }
   }, 'Valider');
 }
-async function showBoard() {
+async function showBoard(season) {
+  if (typeof season !== 'string') season = SEASON;
+  if (X.board && X.board(season)) return;
   if (!S.name) { askName(showBoard); return; }
   modal('<h3>Classement</h3><p class="muted">Chargement…</p>');
   let d = await pushScore();
@@ -1755,7 +1763,7 @@ function renderPanel() {
     STARS.forEach((s, i) => {
       h += S.stars.includes(i)
         ? `<button class="tile star r${s.r || 0} ${i === selStar ? 'sel' : ''}" data-star="${i}"><canvas></canvas><span>${s.n}</span></button>`
-        : `<div class="tile locked r${s.r || 0}"><div class="q">★</div><span><b class="rar r${s.r || 0}">${rarOf(s)[0]}</b><br>${s.noel ? 'En décembre' : TIERS[s.at].n}</span></div>`;
+        : `<div class="tile locked r${s.r || 0}"><div class="q">★</div><span><b class="rar r${s.r || 0}">${rarOf(s)[0]}</b><br>${s.noel ? 'En décembre' : s.lock ? 'Mot du salon' : TIERS[s.at].n}</span></div>`;
     });
     h += '</div><p class="muted">Personnages inventés pour le jeu : toute ressemblance serait fortuite.</p>';
     h += `<h2>Collection ${S.cuts.length}/${CUTS.length}</h2><div class="cut-info">${info}</div><div class="grid">`;

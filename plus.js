@@ -891,7 +891,7 @@ X.draw = (g) => {
   g.fillStyle = v; g.fillRect(0, 0, W, H);
   g.setTransform(k, 0, 0, k, ox, oy);
   if (burst > 0) { // onde dorée à l'encaissement
-    const r = (1 - burst) * 190;
+    const r = Math.max(0, 1 - burst) * 190;
     g.strokeStyle = `rgba(255,214,110,${burst * 0.8})`; g.lineWidth = 10 * burst + 1; g.beginPath(); g.arc(CX, 270, r, 0, 7); g.stroke();
     g.strokeStyle = `rgba(255,255,255,${burst * 0.5})`; g.lineWidth = 2; g.beginPath(); g.arc(CX, 270, r * 0.72, 0, 7); g.stroke();
   }
@@ -899,7 +899,7 @@ X.draw = (g) => {
 };
 X.frame = (dt) => {
   frameV7(dt);
-  if (burst > 0) burst = Math.max(0, burst - dt * 1.8);
+  if (burst > 0) burst = Math.min(1, Math.max(0, burst - dt * 1.8));
   if ((mini || ev) && !rdvEl.hidden) rdvEl.hidden = true; // ne gêne ni les gestes ni les événements
 };
 X.onFinish = (c, pay) => {

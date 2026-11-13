@@ -4,7 +4,7 @@ Clicker pour le salon Signature Cut by Tracy (Pau). On coiffe des clients en tou
 on débloque les prestations du salon, on fait grandir son salon et on gagne un code de réduction.
 Pensé pour téléphone en portrait, adapté aux tablettes et aux ordinateurs.
 
-## État : V8
+## État : V9
 
 Site statique (HTML, CSS, JS), sans serveur. Le personnage, les coupes et le décor sont dessinés en vectoriel
 sur un canvas (`app.js`), nets sur tous les écrans. La partie est sauvegardée sur l'appareil (`localStorage`).
@@ -90,6 +90,23 @@ Nouveautés de la V8 :
 - **Mains et ciseaux** : les ciseaux sont dessinés par-dessus la main (anneaux, pouce et doigts visibles).
 - **Décor et effets** : mur de briques, lambris, grand miroir éclairé, vignette, onde dorée et confettis à
   l'encaissement, détails de visage (taches de rousseur, lunettes, grain de beauté, boucle d'oreille).
+Nouveautés de la V9 (fichier `v9.js`, serveur `netlify/functions/game.mjs`, page `admin.html`) :
+
+- **Parrainage** : lien personnel `/?r=CODE`. Quand le filleul a coiffé 5 clients, les deux reçoivent une prime.
+  Limite : on peut tricher en se parrainant depuis un autre appareil ; l'enjeu n'est que des pièces du jeu.
+- **Code du salon** : mot de la semaine (bonus une fois par mot, débloque « L'Ami du salon ») et **carte de
+  fidélité** (codes à usage unique, 5 tampons). **La récompense réelle de la carte est à définir avec Tracy.**
+- **Page de Tracy** (`/admin.html`) : fréquentation, mot de la semaine, création de tampons, classement complet avec
+  retrait d'un pseudo, parrainages. Elle exige la variable d'environnement **`ADMIN_KEY`** dans Netlify
+  (Site configuration → Environment variables), puis un redéploiement. Sans elle, la page répond « non réglée ».
+- **Mesure d'audience anonyme** : compteurs par jour (visites, nouveaux joueurs, clics Planity, téléphone, plan,
+  partages). Aucun identifiant ni cookie. Ordre de grandeur, pas comptabilité.
+- **Carte avant / après** à chaque nouvelle coupe, avec le vrai prix et le bouton Planity, partageable en image.
+- **Mode Chrono** : 60 secondes en partant de zéro, classement à part (saison `s1-chrono`), lien de défi `/?c=score`.
+- **Icônes dessinées** (SVG) à la place des émojis sur les tuiles, les étapes et les onglets.
+- **Mode enfant** (onglet Infos) : moins de texte, pas de lien de rendez-vous ; lecture des infobulles en option.
+- **Tenue du coiffeur** (onglet Salon), **musique propre à chaque univers**, **reprise sur un autre appareil** par code.
+- Correction : la boucle du jeu ne peut plus se figer après un retour sur l'onglet.
 Mesure par simulation (10 clics par seconde, achats immédiats) : premier salon terminé en 10 min environ, le
 deuxième en 9 min, le troisième en 19 min, puis de plus en plus long. Non vérifié avec de vrais joueurs.
 
